@@ -6,11 +6,11 @@ import Typewriter from 'typewriter-effect';
 export default function Hero() {
   const socialIcons = [
     { icon: <Instagram size={20} />, link: "#" },
-    { icon: <Linkedin size={20} />, link: "#" },
-    { icon: <Github size={20} />, link: "#" },
-    { icon: <Twitter size={20} />, link: "#" },
+    { icon: <Linkedin size={20} />, link: "https://www.linkedin.com/in/tiffany-lyssa-4b210b281/" },
+    { icon: <Github size={20} />, link: "https://github.com/knorthy" },
+    { icon: <Twitter size={20} />, link: "https://x.com/kno_orth" },
     { icon: <Figma size={20} />, link: "#" },
-    { icon: <Facebook size={20} />, link: "#" },
+    { icon: <Facebook size={20} />, link: "https://www.facebook.com/lystffny/" },
   ];
 
   return (
