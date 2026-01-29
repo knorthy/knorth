@@ -14,35 +14,100 @@ export default function Hero() {
   ];
 
   return (
-    // Changed from flex to grid
     <section className="grid grid-cols-1 md:grid-cols-2 items-center justify-center min-h-[80vh] pt-20 px-6 gap-y-12 gap-x-8 max-w-6xl mx-auto">
       
-      {/* 1. TOP LEFT: Empty Space for 3D Character */}
-      {/* Added min-h to ensure it takes up space even when empty. Remove border-dashed later. */}
-      <div className="hidden md:flex relative w-full min-h-[350px] items-center justify-center border-2 border-dashed border-foreground/10 rounded-xl">
-        <p className="text-foreground/30 font-mono text-sm">
-            &lt; 3D Character Space &gt;
-        </p>
+      {/* for my 3d character */}
+      <div className="hidden md:flex relative w-full min-h-[350px] items-center justify-center">
+        {/* space */}
       </div>
 
-      {/* 2. TOP RIGHT: "Judges a book..." Section */}
       <div className="flex flex-col items-center md:items-end text-center md:text-right w-full">
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-foreground/80 mb-2 italic"
-          >
-            Hello! I Am <span className="text-red-600 font-semibold">Tiffany Lyssa</span>
-          </motion.p>
+          <div className="relative">
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-foreground/80 mb-2 italic"
+            >
+              Hello! I Am <span className="text-red-600 font-semibold">Tiffany Lyssa</span>
+            </motion.p>
+            
+            {/* Curved Arrow pointing to the left */}
+            <svg 
+              className="hidden md:block absolute right-full top-1/2 -translate-y-1/2 w-64 h-32 text-foreground/40 pointer-events-none overflow-visible"
+              viewBox="0 0 200 100"
+              fill="none"
+            >
+              {/* Arrow curve path */}
+              <motion.path 
+                d="M190 50 Q100 -15, 15 45"
+                stroke="currentColor" 
+                strokeWidth="2"
+                strokeLinecap="round"
+                fill="none"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ 
+                  pathLength: {
+                        duration: 1, 
+                        ease: "easeInOut", 
+                        repeat: Infinity, 
+                        repeatDelay: .5,
+                  },
+                  opacity: { duration: 0.3 }
+                }}
+              />
+              {/* Arrowhead */}
+              <motion.path 
+                d="M15 45 L20 28 M15 45 L30 45"
+                stroke="currentColor" 
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                fill="none"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ 
+                  pathLength: {
+                        duration: 1, 
+                        ease: "easeInOut", 
+                        repeat: Infinity, 
+                        repeatDelay: .5,
+                  },
+                  opacity: { duration: 0.2, delay: 1.5 }
+                }}
+              />
+            </svg>
+          </div>
           
           <div className="relative mb-6">
             <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-              Judges a book<br />by its <span className="relative inline-block px-2">
-                <span className="relative z-10 text-red-600">cover...</span>
-                <svg className="absolute -inset-1 w-full h-full text-foreground/20" viewBox="0 0 100 40">
-                  <ellipse cx="50" cy="20" rx="48" ry="18" fill="none" stroke="currentColor" strokeWidth="1" />
+              Judges a book<br />by its{" "}
+              <span className="relative inline-block">
+                <span className="relative z-10 text-red-600">cover</span>
+                <svg 
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[140%] text-foreground/60 pointer-events-none overflow-visible" 
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                >
+                  <motion.ellipse 
+                    cx="50" cy="50" rx="45" ry="38" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 1 }}
+                    transition={{ 
+                      pathLength: {
+                        duration: 1, 
+                        ease: "easeInOut", 
+                        repeat: Infinity, 
+                        repeatDelay: .5,
+                      },
+                      opacity: { duration: 0.2 }
+                    }}
+                  />
                 </svg>
-              </span>
+              </span>...
             </h1>
             <p className="text-[10px] uppercase tracking-widest opacity-50 mt-2">
               Because if the cover does not impress you what else can?
@@ -64,7 +129,6 @@ export default function Hero() {
           </div>
       </div>
 
-      {/* 3. BOTTOM LEFT: "Software Engineer" Section */}
       <div className="flex flex-col justify-center text-left w-full">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -91,8 +155,6 @@ export default function Hero() {
             between user needs and business goals.
           </p>
       </div>
-
-      {/* 4. BOTTOM RIGHT: Empty Space (Implicitly created by Grid) */}
       <div className="hidden md:block"></div>
 
     </section>
