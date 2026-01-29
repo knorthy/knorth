@@ -1,7 +1,15 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
+Dependency
 
+```bash
+npm install lucide-react
+
+npm install next-themes lucide-react
+
+npm install framer-motion
+```
 First, run the development server:
 
 ```bash
