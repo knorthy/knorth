@@ -9,6 +9,8 @@ npm install lucide-react
 npm install next-themes lucide-react
 
 npm install framer-motion
+
+npm install typewriter-effect
 ```
 First, run the development server:
 

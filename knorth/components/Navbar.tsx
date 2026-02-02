@@ -50,7 +50,7 @@ export default function Navbar() {
         >
           {/* Sliding Red Circle */}
           <motion.div 
-            className="absolute z-10 flex items-center justify-center w-7 h-7 bg-[#224766] rounded-full shadow-md"
+            className="absolute z-10 flex items-center justify-center w-7 h-7 bg-red-600 rounded-full shadow-md"
             animate={{ x: isDark ? 28 : 0 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
           >

@@ -9,13 +9,13 @@
 }
 
 :root {
-  --background: #efefef;
-  --foreground: #122435;
+  --background: #fafafa;
+  --foreground: #151419;
 }
 
 .dark {
-  --background: #2C2F36;
-  --foreground: #efefef;
+  --background: #151419;
+  --foreground: #fafafa;
 }
 
 body {
