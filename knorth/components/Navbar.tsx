@@ -16,14 +16,17 @@ export default function Navbar() {
   const isDark = resolvedTheme === 'dark';
 
   return (
-    <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4">
+    <nav className="fixed top-6 left-0 right-0 z-50 flex items-center justify-between px-6">
       
-      {/* Main Navigation */}
-      <div className="flex items-center gap-8 px-10 py-3 
-                      bg-white/10 dark:bg-black/20 
-                      backdrop-blur-xl border border-white/20 
-                      rounded-full shadow-xl">
-        {/* Changed: uses text-foreground to match Hero component logic */}
+      {/* Logo - Upper Left */}
+      <div className="flex items-center">
+        <a href="#home" className="text-2xl font-bold text-[#224766]">
+          Knorth
+        </a>
+      </div>
+
+      {/* Main Navigation - Center */}
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-8 px-10 py-3 shadow-xl rounded-[20px] backdrop-blur-md bg-white/30 dark:bg-black/30 border border-white/20 dark:border-white/10">
         <div className="flex gap-8 text-sm font-medium text-foreground/80">
           <a href="#home" className="hover:text-[#224766] transition-colors">Home</a>
           <a href="#about" className="hover:text-[#224766] transition-colors">About</a>
@@ -33,21 +36,9 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Download CV  */}
-      <div className="flex items-center gap-3">
-        <button className="px-8 py-3 text-sm font-bold text-white 
-                           bg-[#224766] hover:bg-[#1a3a5a] rounded-full 
-                           transition-all active:scale-95 shadow-lg">
-          Download CV
-        </button>
-
-        {/* The Red Glass Switch */}
-        <div 
-          onClick={() => setTheme(isDark ? 'light' : 'dark')}
-          className="relative w-16 h-9 px-1 flex items-center cursor-pointer
-                     bg-white/10 dark:bg-black/30 backdrop-blur-md 
-                     border border-white/20 rounded-full shadow-inner"
-        >
+      {/* Theme Switch - Upper Right */}
+      <div onClick={() => setTheme(isDark ? 'light' : 'dark')} className="cursor-pointer">
+        <div className="relative w-16 h-9 px-1 flex items-center shadow-inner rounded-[18px] backdrop-blur-md bg-white/30 dark:bg-black/30 border border-white/20 dark:border-white/10">
           {/* Sliding Red Circle */}
           <motion.div 
             className="absolute z-10 flex items-center justify-center w-7 h-7 bg-red-600 rounded-full shadow-md"

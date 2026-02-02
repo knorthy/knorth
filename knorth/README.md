@@ -4,13 +4,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 Dependency
 
 ```bash
-npm install lucide-react
-
-npm install next-themes lucide-react
-
-npm install framer-motion
-
-npm install typewriter-effect
+npm install lucide-react next-themes framer-motion typewriter-effect clsx tailwind-merge tw-animate-css
 ```
 First, run the development server:
 
