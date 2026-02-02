@@ -28,7 +28,7 @@ export default function Hero() {
               animate={{ opacity: 1 }}
               className="text-foreground/80 mb-2 italic"
             >
-              Hello! I Am <span className="text-red-600 font-semibold">Tiffany Lyssa</span>
+              Hello! I Am <span className="text-[#224766] font-semibold">Tiffany Lyssa</span>
             </motion.p>
             
             {/* Curved Arrow pointing to the left */}
@@ -82,7 +82,7 @@ export default function Hero() {
             <h1 className="text-4xl md:text-6xl font-bold leading-tight">
               Judges a book<br />by its{" "}
               <span className="relative inline-block">
-                <span className="relative z-10 text-red-600">cover</span>
+                <span className="relative z-10 text-[#224766]">cover</span>
                 <svg 
                   className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[140%] text-foreground/60 pointer-events-none overflow-visible" 
                   viewBox="0 0 100 100"
@@ -120,8 +120,8 @@ export default function Hero() {
               <motion.a
                 key={idx}
                 href={item.link}
-                whileHover={{ y: -3, color: "var(--color-red-600)" }}
-                className="hover:text-red-600 transition-colors"
+                whileHover={{ y: -3, color: "#224766" }}
+                className="hover:text-[#224766] transition-colors"
               >
                 {item.icon}
               </motion.a>
@@ -136,7 +136,7 @@ export default function Hero() {
             className="text-5xl font-medium mb-4 flex flex-wrap gap-2"
           >
             <span>I'm a</span>
-            <span className="text-red-600">
+            <span className="text-[#224766]">
               <Typewriter
                 options={{
                   strings: ['Software Engineer.', 'Designer.','Developer.', 'Freelancer.'],
