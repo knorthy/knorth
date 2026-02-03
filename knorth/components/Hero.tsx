@@ -177,9 +177,12 @@ export default function Hero() {
             <div className="absolute -top-12 left-0 md:-left-20 z-20 pointer-events-none select-none">
               <ScrollFloat
                 animationDuration={1}
-                transitionSpeed={0.1}
+                ease="back.inOut(2)"
+                scrollStart="center bottom+=50%"
+                scrollEnd="bottom bottom-=40%"
+                stagger={0.03}
                 ghost={true}
-                containerClassName="text-6xl md:text-8xl font-black uppercase tracking-tighter text-foreground/10 dark:text-white/5"
+                containerClassName="text-6xl md:text-8xl font-black uppercase tracking-tighter text-foreground dark:text-white"
               >
                 What I Do
               </ScrollFloat>
