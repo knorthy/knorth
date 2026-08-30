@@ -173,21 +173,6 @@ export default function Hero() {
           {/* TILTEDCARD */}
           <div className="relative flex justify-center md:justify-end items-center w-full order-1 md:order-2">
             
-            {/* WHAT I DO */}
-            <div className="absolute -top-12 left-0 md:-left-20 z-20 pointer-events-none select-none">
-              <ScrollFloat
-                animationDuration={1}
-                ease="back.inOut(2)"
-                scrollStart="center bottom+=50%"
-                scrollEnd="bottom bottom-=40%"
-                stagger={0.03}
-                ghost={true}
-                containerClassName="text-6xl md:text-8xl font-black uppercase tracking-tighter text-foreground dark:text-white"
-              >
-                What I Do
-              </ScrollFloat>
-            </div>
-
             <TiltedCard
               imageSrc="/profile.jpg" 
               altText="Tiffany Lyssa"
