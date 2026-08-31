@@ -96,19 +96,17 @@ const VOLUNTEERS = [
 
 // ── ExperienceList ────────────────────────────────────────────────────────────
 function ExperienceList() {
-  const [showAll, setShowAll] = useState(false);
-  const visible = showAll ? JOBS : JOBS.slice(0, 1);
+  const visible = JOBS.slice(0, 1);
 
   return (
     <div className="relative">
       <div className="flex flex-col gap-5 relative">
-        {/* Fade overlay when collapsed */}
-        {!showAll && (
-          <div className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none z-10"
-            style={{ background: "linear-gradient(to bottom, transparent 0%, rgba(14, 14, 14, 0.7) 50%, var(--background) 100%)" }} />
-        )}
+        {/* Fade overlay */}
+        <div className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none z-10"
+          style={{ background: "linear-gradient(to bottom, transparent 0%, rgba(14, 14, 14, 0.7) 50%, var(--background) 100%)" }} />
+        
         {visible.map((job, i) => {
-          const previewBullets = !showAll && i === 0 ? job.bullets.slice(0, 2) : job.bullets;
+          const previewBullets = job.bullets.slice(0, 2);
           return (
           <motion.div
             key={i}
@@ -137,20 +135,12 @@ function ExperienceList() {
           );
         })}
 
-        {!showAll && (
-          <div className="relative mt-0">
-            <button onClick={() => setShowAll(true)}
-              className="relative z-20 pl-8 text-sm text-foreground/40 hover:text-foreground/80 transition-colors tracking-[0.2em]">
-              see more
-            </button>
-          </div>
-        )}
-        {showAll && (
-          <button onClick={() => setShowAll(false)}
-            className="pl-8 text-sm text-foreground/40 hover:text-foreground/80 transition-colors tracking-[0.2em]">
-            see less
-          </button>
-        )}
+        <div className="relative mt-0">
+          <a href="/experience"
+            className="relative z-20 pl-8 text-sm text-foreground/40 hover:text-foreground/80 transition-colors tracking-[0.2em]">
+            see more
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -158,23 +148,20 @@ function ExperienceList() {
 
 // ── AffiliationList ───────────────────────────────────────────────────────────
 function AffiliationList() {
-  const [showAll, setShowAll] = useState(false);
-
   return (
     <div className="mt-7">
       <p className="text-xs uppercase tracking-[0.3em] text-foreground/40 mb-6">Leadership &amp; Affiliations</p>
 
       <div className="relative flex flex-col gap-0">
-        {/* Fade overlay when collapsed */}
-        {!showAll && (
-          <div className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none z-10"
-            style={{ background: "linear-gradient(to bottom, transparent 0%, rgba(14, 14, 14, 0.7) 50%, var(--background) 100%)" }} />
-        )}
-        {/* Member of — always visible, show only first entry when collapsed */}
+        {/* Fade overlay */}
+        <div className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none z-10"
+          style={{ background: "linear-gradient(to bottom, transparent 0%, rgba(14, 14, 14, 0.7) 50%, var(--background) 100%)" }} />
+        
+        {/* Member of — always visible, show only first entry */}
         <div className="pl-8 mb-2">
           <p className="text-[11px] uppercase tracking-widest font-bold mb-6" style={{ color: ACCENT2 }}>Member of</p>
           <div className="flex flex-col gap-7">
-            {(showAll ? MEMBERS : MEMBERS.slice(0, 1)).map((aff, i) => (
+            {MEMBERS.slice(0, 1).map((aff, i) => (
               <motion.div key={i} initial={{ opacity: 0, x: -16 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08, duration: 0.4 }} className="relative flex gap-4 items-start">
                 <span className="absolute -left-[1.45rem] mt-2 w-2.5 h-2.5 rounded-full ring-2 ring-background shrink-0" style={{ background: aff.color }} />
                 <div>
@@ -187,39 +174,12 @@ function AffiliationList() {
           </div>
         </div>
 
-        {/* Volunteer — revealed on see more */}
-        {showAll && (
-          <div className="pl-8 mb-6 mt-8">
-            <p className="text-[11px] uppercase tracking-widest font-bold mb-6" style={{ color: ACCENT4 }}>Volunteer Work</p>
-            <div className="flex flex-col gap-7">
-              {VOLUNTEERS.map((aff, i) => (
-                <motion.div key={i} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08, duration: 0.4 }} className="relative flex gap-4 items-start">
-                  <span className="absolute -left-[1.45rem] mt-2 w-2.5 h-2.5 rounded-full ring-2 ring-background shrink-0" style={{ background: aff.color }} />
-                  <div>
-                    <p className="text-base font-semibold text-foreground">{aff.org}</p>
-                    <p className="text-[10px] uppercase tracking-widest mt-0.5" style={{ color: aff.color }}>{aff.period}</p>
-                    <p className="text-sm text-foreground/50 mt-0.5">{aff.role}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {!showAll && (
-          <div className="relative mt-4 pl-8">
-            <button onClick={() => setShowAll(true)}
-              className="relative z-20 text-sm text-foreground/40 hover:text-foreground/80 transition-colors tracking-[0.2em]">
-              see more
-            </button>
-          </div>
-        )}
-        {showAll && (
-          <button onClick={() => setShowAll(false)}
-            className="pl-8 text-sm text-foreground/40 hover:text-foreground/80 transition-colors tracking-[0.2em]">
-            see less
-          </button>
-        )}
+        <div className="relative mt-4 pl-8">
+          <a href="/experience"
+            className="relative z-20 text-sm text-foreground/40 hover:text-foreground/80 transition-colors tracking-[0.2em]">
+            see more
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -350,45 +310,65 @@ export default function Hero() {
 
       {/* HOME */}
       <section id="home" className="flex flex-col items-center justify-center min-h-screen px-6 max-w-6xl mx-auto w-full">
-        <div className="flex flex-col items-center md:items-end text-center md:text-right w-full">
-          <div className="relative">
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-foreground/80 mb-2 italic">
-              Hello! I Am <span style={{ color: ACCENT }} className="font-semibold">Tiffany Lyssa</span>
-            </motion.p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center w-full">
+          
+          {/* LEFT SIDE - GIF */}
+          <motion.div 
+            initial={{ opacity: 0, x: -50 }} 
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+            className="flex justify-center md:justify-start order-2 md:order-1"
+          >
+            <div className="relative w-full max-w-[500px] aspect-square">
+              <img 
+                src="/mee.gif" 
+                alt="Tiffany Lyssa Animation" 
+                className="w-full h-full object-cover rounded-2xl"
+              />
+            </div>
+          </motion.div>
 
-            <svg className="hidden md:block absolute right-full top-1/2 -translate-y-1/2 w-64 h-32 pointer-events-none overflow-visible" viewBox="0 0 200 100" fill="none">
-              <motion.path d="M190 50 Q100 -15, 15 45" stroke={ACCENT3} strokeWidth="2" strokeLinecap="round"
-                initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ pathLength: { duration: 1, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5 }, opacity: { duration: 0.3 } }} />
-              <motion.path d="M15 45 L20 28 M15 45 L30 45" stroke={ACCENT3} strokeWidth="1.5" strokeLinecap="round"
-                initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ pathLength: { duration: 1, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5 }, opacity: { duration: 0.2, delay: 1.5 } }} />
-            </svg>
-          </div>
+          {/* RIGHT SIDE - TEXT CONTENT */}
+          <div className="flex flex-col items-center md:items-end text-center md:text-right w-full order-1 md:order-2">
+            <div className="relative">
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-foreground/80 mb-2 italic">
+                Hello! I Am <span style={{ color: ACCENT }} className="font-semibold">Tiffany Lyssa</span> who
+              </motion.p>
 
-          <div className="relative mb-6">
-            <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-              Judges a book<br />by its{" "}
-              <span className="relative inline-block">
-                <span className="relative z-10" style={{ color: ACCENT2 }}>cover</span>
-                <svg className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[140%] pointer-events-none overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  <motion.ellipse cx="50" cy="50" rx="45" ry="38" fill="none" stroke={ACCENT4} strokeWidth="1.5" strokeLinecap="round"
-                    initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ pathLength: { duration: 1, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5 }, opacity: { duration: 0.2 } }} />
-                </svg>
-              </span>...
-            </h1>
-            <p className="text-[10px] uppercase tracking-widest opacity-50 mt-2">
-              Because if the cover does not impress you what else can?
-            </p>
-          </div>
+              <svg className="hidden md:block absolute right-full top-1/2 -translate-y-1/2 w-64 h-32 pointer-events-none overflow-visible" viewBox="0 0 200 100" fill="none">
+                <motion.path d="M190 50 Q100 -15, 15 45" stroke={ACCENT3} strokeWidth="2" strokeLinecap="round"
+                  initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }}
+                  transition={{ pathLength: { duration: 1, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5 }, opacity: { duration: 0.3 } }} />
+                <motion.path d="M15 45 L20 28 M15 45 L30 45" stroke={ACCENT3} strokeWidth="1.5" strokeLinecap="round"
+                  initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }}
+                  transition={{ pathLength: { duration: 1, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5 }, opacity: { duration: 0.2, delay: 1.5 } }} />
+              </svg>
+            </div>
 
-          <div className="flex gap-5 mt-4 text-foreground/60">
-            {socialIcons.map((item, idx) => (
-              <motion.a key={idx} href={item.link} whileHover={{ y: -3, color: ACCENT }} className="transition-colors">
-                {item.icon}
-              </motion.a>
-            ))}
+            <div className="relative mb-6">
+              <h1 className="text-4xl md:text-6xl font-bold leading-tight">
+                Judges a book<br />by its{" "}
+                <span className="relative inline-block">
+                  <span className="relative z-10" style={{ color: ACCENT2 }}>cover</span>
+                  <svg className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[140%] pointer-events-none overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <motion.ellipse cx="50" cy="50" rx="45" ry="38" fill="none" stroke={ACCENT4} strokeWidth="1.5" strokeLinecap="round"
+                      initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }}
+                      transition={{ pathLength: { duration: 1, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5 }, opacity: { duration: 0.2 } }} />
+                  </svg>
+                </span>...
+              </h1>
+              <p className="text-[10px] uppercase tracking-widest opacity-50 mt-2">
+                Because if the cover does not impress you what else can?
+              </p>
+            </div>
+
+            <div className="flex gap-5 mt-4 text-foreground/60">
+              {socialIcons.map((item, idx) => (
+                <motion.a key={idx} href={item.link} whileHover={{ y: -3, color: ACCENT }} className="transition-colors">
+                  {item.icon}
+                </motion.a>
+              ))}
+            </div>
           </div>
         </div>
       </section>
