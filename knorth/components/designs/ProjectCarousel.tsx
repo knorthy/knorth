@@ -250,7 +250,8 @@ function CardItem({
           </div>
 
           {/* visit label */}
-          <div className="mt-1 flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-semibold text-sm bg-white text-[#0d1b2a] group-hover:bg-white/90 transition-colors duration-150">
+          <div className="mt-1 flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-semibold text-sm transition-colors duration-150"
+            style={{ background: "#f72585", color: "#fff" }}>
             Visit Project
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M7 17L17 7M7 7h10v10" />
