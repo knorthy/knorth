@@ -4,6 +4,7 @@ import { Instagram, Linkedin, Github, Twitter, Figma, Facebook } from "lucide-re
 import { useEffect, useRef, useState } from "react";
 import TiltedCard from "@/components/designs/TiltedCard";
 import CircularGallery from "@/components/designs/CircularGallery";
+import Contact from "@/components/Contact";
 
 const ACCENT  = "#f72585";
 const ACCENT2 = "#b5ff4d";
@@ -100,7 +101,12 @@ function ExperienceList() {
 
   return (
     <div className="relative">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5 relative">
+        {/* Fade overlay when collapsed */}
+        {!showAll && (
+          <div className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none z-10"
+            style={{ background: "linear-gradient(to bottom, transparent 0%, rgba(14, 14, 14, 0.7) 50%, var(--background) 100%)" }} />
+        )}
         {visible.map((job, i) => {
           const previewBullets = !showAll && i === 0 ? job.bullets.slice(0, 2) : job.bullets;
           return (
@@ -133,8 +139,6 @@ function ExperienceList() {
 
         {!showAll && (
           <div className="relative mt-0">
-            <div className="absolute -top-8 left-0 right-0 h-12 pointer-events-none z-10"
-              style={{ background: "linear-gradient(to bottom, transparent 0%, var(--background) 100%)" }} />
             <button onClick={() => setShowAll(true)}
               className="relative z-20 pl-8 text-sm text-foreground/40 hover:text-foreground/80 transition-colors tracking-[0.2em]">
               see more
@@ -161,6 +165,11 @@ function AffiliationList() {
       <p className="text-xs uppercase tracking-[0.3em] text-foreground/40 mb-6">Leadership &amp; Affiliations</p>
 
       <div className="relative flex flex-col gap-0">
+        {/* Fade overlay when collapsed */}
+        {!showAll && (
+          <div className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none z-10"
+            style={{ background: "linear-gradient(to bottom, transparent 0%, rgba(14, 14, 14, 0.7) 50%, var(--background) 100%)" }} />
+        )}
         {/* Member of — always visible, show only first entry when collapsed */}
         <div className="pl-8 mb-2">
           <p className="text-[11px] uppercase tracking-widest font-bold mb-6" style={{ color: ACCENT2 }}>Member of</p>
@@ -199,8 +208,6 @@ function AffiliationList() {
 
         {!showAll && (
           <div className="relative mt-4 pl-8">
-            <div className="absolute -top-8 left-0 right-0 h-12 pointer-events-none z-10"
-              style={{ background: "linear-gradient(to bottom, transparent 0%, var(--background) 100%)" }} />
             <button onClick={() => setShowAll(true)}
               className="relative z-20 text-sm text-foreground/40 hover:text-foreground/80 transition-colors tracking-[0.2em]">
               see more
@@ -492,7 +499,7 @@ export default function Hero() {
       </section>
 
       {/* CONTACT */}
-      <section id="contact" className="min-h-screen flex items-center justify-center opacity-20 uppercase tracking-[1em]">Contact</section>
+      <Contact />
 
     </div>
   );
