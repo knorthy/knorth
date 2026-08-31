@@ -2,8 +2,8 @@
 import { motion } from "framer-motion";
 import { Instagram, Linkedin, Github, Twitter, Figma, Facebook } from "lucide-react";
 import Typewriter from 'typewriter-effect';
-import TiltedCard from "@/components/designs/TiltedCard"; 
-import ScrollFloat from "@/components/designs/ScrollFloat";
+import TiltedCard from "@/components/designs/TiltedCard";
+import CircularGallery from "@/components/designs/CircularGallery";
 
 export default function Hero() {
   const socialIcons = [
@@ -20,7 +20,7 @@ export default function Hero() {
 
   return (
     <div className="flex flex-col w-full">
-      
+
       {/* HOME */}
       <section id="home" className="flex flex-col items-center justify-center min-h-screen px-6 max-w-6xl mx-auto w-full">
         <div className="flex flex-col items-center md:items-end text-center md:text-right w-full">
@@ -32,7 +32,7 @@ export default function Hero() {
             >
               Hello! I Am <span className="text-[#224766] font-semibold">Tiffany Lyssa</span>
             </motion.p>
-            
+
             <svg
               className="hidden md:block absolute right-full top-1/2 -translate-y-1/2 w-64 h-32 text-foreground/40 pointer-events-none overflow-visible"
               viewBox="0 0 200 100"
@@ -46,8 +46,8 @@ export default function Hero() {
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 1 }}
                 transition={{
-                  pathLength: { duration: 1, ease: "easeInOut", repeat: Infinity, repeatDelay: .5 },
-                  opacity: { duration: 0.3 }
+                  pathLength: { duration: 1, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5 },
+                  opacity: { duration: 0.3 },
                 }}
               />
               <motion.path
@@ -58,13 +58,13 @@ export default function Hero() {
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 1 }}
                 transition={{
-                  pathLength: { duration: 1, ease: "easeInOut", repeat: Infinity, repeatDelay: .5 },
-                  opacity: { duration: 0.2, delay: 1.5 }
+                  pathLength: { duration: 1, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5 },
+                  opacity: { duration: 0.2, delay: 1.5 },
                 }}
               />
             </svg>
           </div>
-          
+
           <div className="relative mb-6">
             <h1 className="text-4xl md:text-6xl font-bold leading-tight">
               Judges a book<br />by its{" "}
@@ -84,8 +84,8 @@ export default function Hero() {
                     initial={{ pathLength: 0, opacity: 0 }}
                     animate={{ pathLength: 1, opacity: 1 }}
                     transition={{
-                      pathLength: { duration: 1, ease: "easeInOut", repeat: Infinity, repeatDelay: .5 },
-                      opacity: { duration: 0.2 }
+                      pathLength: { duration: 1, ease: "easeInOut", repeat: Infinity, repeatDelay: 0.5 },
+                      opacity: { duration: 0.2 },
                     }}
                   />
                 </svg>
@@ -111,22 +111,22 @@ export default function Hero() {
         </div>
       </section>
 
-      {/* ABOUT*/}
+      {/* ABOUT */}
       <section id="about" className="flex flex-col items-center justify-center min-h-screen px-6 max-w-6xl mx-auto w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center w-full">
-          
+
           {/* CONTENT LEFT */}
           <div className="flex flex-col justify-center text-left w-full order-2 md:order-1">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-4xl md:text-5xl font-medium mb-12 flex flex-wrap gap-2"
             >
-              <span>I'm a</span>
+              <span>I&apos;m a</span>
               <span className="text-[#224766]">
                 <Typewriter
                   options={{
-                    strings: ['Software Engineer.', 'Designer.', 'Developer.'],
+                    strings: ["Software Engineer.", "Designer.", "Developer."],
                     autoStart: true,
                     loop: true,
                     delay: 75,
@@ -134,13 +134,13 @@ export default function Hero() {
                 />
               </span>
             </motion.div>
-            
+
             <div className="space-y-10">
               {/* DEVELOP BLOCK */}
               <div>
                 <h3 className="text-xs uppercase tracking-widest font-bold mb-3 text-[#224766]">Develop</h3>
                 <p className="text-foreground/60 mb-4 max-w-md text-xs leading-relaxed">
-                  I make meaningful and delightful digital products that create an equilibrium 
+                  I make meaningful and delightful digital products that create an equilibrium
                   between user needs and business goals.
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -156,7 +156,7 @@ export default function Hero() {
               <div>
                 <h3 className="text-xs uppercase tracking-widest font-bold mb-3 text-[#224766]">Create</h3>
                 <p className="text-foreground/60 mb-4 max-w-md text-xs leading-relaxed">
-                  My content creation journey evolved from a side hustle to serving other creators, 
+                  My content creation journey evolved from a side hustle to serving other creators,
                   achieving meaningful visual storytelling.
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -172,9 +172,8 @@ export default function Hero() {
 
           {/* TILTEDCARD */}
           <div className="relative flex justify-center md:justify-end items-center w-full order-1 md:order-2">
-            
             <TiltedCard
-              imageSrc="/profile.jpg" 
+              imageSrc="/profile.jpg"
               altText="Tiffany Lyssa"
               captionText="Tiffany Lyssa"
               containerHeight="600px"
@@ -192,13 +191,33 @@ export default function Hero() {
               }
             />
           </div>
-
         </div>
       </section>
 
-      {/* FOOTER SECTIONS FOR SCROLLING */}
+      {/* PROJECTS */}
+      <section id="projects" className="min-h-screen flex flex-col items-center justify-center py-16">
+        <div className="text-center mb-0 px-6">
+          <p className="text-xs uppercase tracking-[0.3em] text-foreground/40 mb-3">Selected Work</p>
+          <h2 className="text-4xl md:text-6xl font-bold">
+            My <span className="text-[#224766]">Projects</span>
+          </h2>
+          <p className="text-foreground/50 text-sm mt-4 max-w-md mx-auto">
+            A collection of things I&apos;ve built, designed, and shipped.
+          </p>
+        </div>
+        <div style={{ height: '600px', width: '100%', position: 'relative', marginTop: '-80px' }}>
+          <CircularGallery
+            bend={1}
+            textColor="#ffffff"
+            borderRadius={0.05}
+            scrollEase={0.05}
+            font="bold 30px Figtree"
+            scrollSpeed={2}
+          />
+        </div>
+      </section>
+
       <section id="experience" className="min-h-screen flex items-center justify-center opacity-20 uppercase tracking-[1em]">Experience</section>
-      <section id="projects" className="min-h-screen flex items-center justify-center opacity-20 uppercase tracking-[1em]">Projects</section>
       <section id="contact" className="min-h-screen flex items-center justify-center opacity-20 uppercase tracking-[1em]">Contact</section>
 
     </div>

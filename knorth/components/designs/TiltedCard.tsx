@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from 'react';
+import React from 'react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
 
 const springValues = {
@@ -23,6 +24,20 @@ export default function TiltedCard({
   showTooltip = true,
   overlayContent = null,
   displayOverlayContent = false
+}: {
+  imageSrc: string;
+  altText?: string;
+  captionText?: string;
+  containerHeight?: string;
+  containerWidth?: string;
+  imageHeight?: string;
+  imageWidth?: string;
+  scaleOnHover?: number;
+  rotateAmplitude?: number;
+  showMobileWarning?: boolean;
+  showTooltip?: boolean;
+  overlayContent?: React.ReactNode;
+  displayOverlayContent?: boolean;
 }) {
   const ref = useRef(null);
   const x = useMotionValue(0);

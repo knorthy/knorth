@@ -26,7 +26,7 @@ export default function Navbar() {
       });
     }, observerOptions);
 
-    const sectionIds = ['home', 'about', 'experience', 'projects', 'contact'];
+    const sectionIds = ['home', 'about', 'projects', 'experience', 'contact'];
     sectionIds.forEach((id) => {
       const el = document.getElementById(id);
       if (el) observer.observe(el);
@@ -46,7 +46,7 @@ export default function Navbar() {
 
       <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-8 px-10 py-3 shadow-xl rounded-[20px] backdrop-blur-md bg-white/30 dark:bg-black/30 border border-white/20 dark:border-white/10">
         <div className="flex gap-8 text-sm font-medium">
-          {['home', 'about', 'experience', 'projects', 'contact'].map((id) => (
+          {['home', 'about', 'projects', 'experience', 'contact'].map((id) => (
             <a
               key={id}
               href={`#${id}`}
