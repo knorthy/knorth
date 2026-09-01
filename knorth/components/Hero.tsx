@@ -309,7 +309,7 @@ export default function Hero() {
     <div className="flex flex-col w-full">
 
       {/* HOME */}
-      <section id="home" className="flex flex-col items-center justify-center min-h-screen px-6 max-w-6xl mx-auto w-full">
+      <section className="flex flex-col items-center justify-start pt-4 min-h-screen px-6 max-w-6xl mx-auto w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center w-full">
           
           {/* LEFT SIDE - GIF */}
