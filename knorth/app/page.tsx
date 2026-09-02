@@ -1,14 +1,6 @@
 "use client";
-import Navbar from '@/components/Navbar';
-import Hero from '@/components/Hero'; // Import the new file here
+import HeroFace from '@/components/HeroFace';
 
-export default function Home() {
-  return (
-    <div className="min-h-screen">
-      <Navbar />
-      <main id="home" className="pt-24"> {/* pt-24 ensures the hero isn't hidden under the fixed navbar */}
-        <Hero />
-      </main>
-    </div>
-  );
+export default function IntroPage() {
+  return <HeroFace />;
 }
