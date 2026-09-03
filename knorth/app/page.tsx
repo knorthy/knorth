@@ -1,14 +1,6 @@
 "use client";
-import Navbar from '@/components/Navbar';
-import Hero from '@/components/Hero';
+import HeroFace from '@/components/HeroFace';
 
-export default function Home() {
-  return (
-    <div className="min-h-screen">
-      <Navbar />
-      <main className="pt-24"> 
-        <Hero />
-      </main>
-    </div>
-  );
+export default function IntroPage() {
+  return <HeroFace />;
 }

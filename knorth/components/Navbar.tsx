@@ -26,7 +26,7 @@ export default function Navbar() {
       });
     }, observerOptions);
 
-    const sectionIds = ['home', 'about', 'experience', 'projects', 'contact'];
+    const sectionIds = ['home', 'about', 'projects', 'experience', 'contact'];
     sectionIds.forEach((id) => {
       const el = document.getElementById(id);
       if (el) observer.observe(el);
@@ -41,18 +41,30 @@ export default function Navbar() {
   return (
     <nav className="fixed top-6 left-0 right-0 z-50 flex items-center justify-between px-6">
       <div className="flex items-center">
-        <a href="#home" className="text-2xl font-bold text-[#224766]">Knorth</a>
+        <a href="#home" className="text-2xl font-bold text-[#f72585]">Knorth</a>
       </div>
 
-      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-8 px-10 py-3 shadow-xl rounded-[20px] backdrop-blur-md bg-white/30 dark:bg-black/30 border border-white/20 dark:border-white/10">
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-8 px-10 py-3 shadow-xl rounded-[20px] backdrop-blur-md bg-white/5 dark:bg-white/5 border border-white/10">
         <div className="flex gap-8 text-sm font-medium">
-          {['home', 'about', 'experience', 'projects', 'contact'].map((id) => (
+          {[
+            { id: 'home',       color: '#f72585' },
+            { id: 'about',      color: '#b5ff4d' },
+            { id: 'projects',   color: '#a855f7' },
+            { id: 'experience', color: '#ffe566' },
+            { id: 'contact',    color: '#f72585' },
+          ].map(({ id, color }) => (
             <a
               key={id}
               href={`#${id}`}
-              className={`transition-colors capitalize ${
-                activeSection === id ? 'text-[#224766] font-bold underline decoration-2 underline-offset-4' : 'text-foreground/60 hover:text-[#224766]'
-              }`}
+              className="transition-colors capitalize"
+              style={activeSection === id
+                ? { color, fontWeight: 700, textDecoration: 'underline', textDecorationThickness: '2px', textUnderlineOffset: '4px' }
+                : { color: 'color-mix(in srgb, var(--foreground) 60%, transparent)' }
+              }
+              onMouseEnter={e => (e.currentTarget.style.color = color)}
+              onMouseLeave={e => {
+                if (activeSection !== id) e.currentTarget.style.color = 'color-mix(in srgb, var(--foreground) 60%, transparent)';
+              }}
             >
               {id === 'contact' ? 'Contact Me' : id}
             </a>
@@ -61,9 +73,9 @@ export default function Navbar() {
       </div>
 
       <div onClick={() => setTheme(isDark ? 'light' : 'dark')} className="cursor-pointer">
-        <div className="relative w-16 h-9 px-1 flex items-center shadow-inner rounded-[18px] backdrop-blur-md bg-white/30 dark:bg-black/30 border border-white/20 dark:border-white/10">
-          <motion.div 
-            className="absolute z-10 flex items-center justify-center w-7 h-7 bg-red-600 rounded-full shadow-md"
+        <div className="relative w-16 h-9 px-1 flex items-center shadow-inner rounded-[18px] backdrop-blur-md bg-white/5 border border-white/10">
+          <motion.div
+            className="absolute z-10 flex items-center justify-center w-7 h-7 bg-[#f72585] rounded-full shadow-md"
             animate={{ x: isDark ? 28 : 0 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
           >
