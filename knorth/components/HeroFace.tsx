@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo, useState, useEffect } from 'react';
+import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useTexture, OrthographicCamera } from '@react-three/drei';
 import * as THREE from 'three';
@@ -10,6 +10,12 @@ import * as THREE from 'three';
 const BLINK_REFLEX_INTERVAL = 3000; // ms - wait time before starting a new blink reflex cycle
 const BLINK_GAP = 200; // ms - gap between first eye blink and second eye blink (faster)
 const BLINK_DURATION = 80; // ms (one-way fade - faster, smoother)
+
+// Strand sway (independent internal motion)
+const SWAY_AMPLITUDE = 0.015; // horizontal displacement at tip (relative units)
+const SWAY_PERIOD = 3.5; // seconds per full cycle
+const SWAY_SECONDARY_AMPLITUDE = 0.006; // layered irregularity
+const SWAY_SECONDARY_PERIOD = 5.2; // seconds
 
 // Natural bounce motion (position)
 const BOUNCE_VERTICAL_PRIMARY_AMPLITUDE = 0.06; // ~6px vertical movement (more subtle)
@@ -26,16 +32,34 @@ const SQUASH_SCALE_X_MAX = 1.02; // scaleX at lowest point (gentle widen)
 const STRETCH_SCALE_Y_MAX = 1.02; // scaleY at highest point (gentle stretch)
 const STRETCH_SCALE_X_MIN = 0.98; // scaleX at highest point (gentle narrow)
 
-// Drag/grab behavior
-const DRAG_RESISTANCE = 0.35; // How much the character resists being pulled (0=no resistance, 1=full resistance)
-const DRAG_SCALE_MIN = 0.88; // How small when being grabbed
-const SHIVER_AMPLITUDE = 0.004; // Shivering intensity when grabbed (reduced for minimal shake)
-const SHIVER_FREQUENCY = 35; // Hz - how fast the shiver (higher = faster shake)
-const DRAG_SPRING_STIFFNESS = 0.08; // How fast character returns to origin when released
-
 // Hover interaction
 const HOVER_SCALE = 1.15; // scale multiplier on hover
 const HOVER_TRANSITION_SPEED = 5; // lerp speed for smooth scale transition
+
+// Grab interaction
+const GRAB_SCALE_TARGET = 0.88; // target scale when grabbed (~12% smaller)
+const GRAB_SCALE_UNDERSHOOT = 0.84; // undershoot during grab snap (~16% smaller at peak)
+const GRAB_SCALE_DURATION = 550; // ms - duration of grab scale animation
+const GRAB_POSITION_DIP_PEAK = -0.20; // ~20px downward at peak (negative = down)
+const GRAB_POSITION_DIP_REST = -0.06; // ~6px downward while held (residual offset)
+// Release spring (rubber-band rebound)
+const GRAB_RELEASE_DURATION = 650;       // ms — total spring animation window
+const SPRING_STIFFNESS = 200;            // higher = snappier snap-back
+const SPRING_DAMPING = 14;               // lower = more bouncy (underdamped), higher = less bounce
+const SPRING_SCALE_OVERSHOOT = 0.10;     // how far past 1.0 the scale springs (fraction, e.g. 0.10 = 10%)
+const SPRING_POSITION_OVERSHOOT = 0.30;  // how far the Y position springs past 0 (fraction of rest offset)
+
+// Elastic cursor-follow (while held)
+const FOLLOW_DAMPING = 0.90;        // fraction of raw cursor delta applied as target (0–1, lower = more resistance)
+const FOLLOW_MAX_OFFSET = 120;      // px — max radial displacement from grab origin (world units ≈ px at zoom 200)
+const FOLLOW_LERP = 0.10;           // lerp factor per frame toward clamped target (lower = more lag)
+
+// Shiver effect (tension while held)
+const SHIVER_AMPLITUDE = 2.2;       // px — peak micro-jitter radius
+const SHIVER_INTERVAL = 65;         // ms — how often shiver offset is randomised
+
+// Release recoil
+const RECOIL_HOLD_DURATION = 120;   // ms — hold squint expression before starting return animation
 // ============================================
 
 // Helper function: custom easing for natural breathing motion
@@ -53,7 +77,24 @@ function easeWithHangTime(t: number): number {
   return eased * 2 - 1;
 }
 
-// Fragment shader for smooth crossfade between two textures
+// Damped spring: returns a value that starts at 1 and oscillates toward 0.
+// t: elapsed seconds, stiffness & damping: spring constants.
+// Returns spring displacement (multiply by your start offset to get position/scale delta).
+function dampedSpring(t: number, stiffness: number, damping: number): number {
+  const omega = Math.sqrt(stiffness); // natural frequency
+  const zeta = damping / (2 * omega);  // damping ratio
+  if (zeta < 1) {
+    // Underdamped — produces bouncy oscillation
+    const omegaD = omega * Math.sqrt(1 - zeta * zeta);
+    return Math.exp(-zeta * omega * t) * (Math.cos(omegaD * t) + (zeta * omega / omegaD) * Math.sin(omegaD * t));
+  } else {
+    // Critically / over-damped — no oscillation
+    const r = -omega;
+    return Math.exp(r * t) * (1 + (-r) * t);
+  }
+}
+
+
 const blinkVertexShader = `
   varying vec2 vUv;
   void main() {
@@ -66,40 +107,77 @@ const blinkFragmentShader = `
   uniform sampler2D uTexBase;
   uniform sampler2D uTexBlink;
   uniform sampler2D uTexHover;
-  uniform sampler2D uTexDrag;
+  uniform sampler2D uTexGrab;
   uniform float uBlinkMix;
   uniform float uHoverMix;
-  uniform float uDragMix;
+  uniform float uGrabMix;
   varying vec2 vUv;
   
   void main() {
     vec4 base = texture2D(uTexBase, vUv);
     vec4 blink = texture2D(uTexBlink, vUv);
     vec4 hover = texture2D(uTexHover, vUv);
-    vec4 drag = texture2D(uTexDrag, vUv);
+    vec4 grab = texture2D(uTexGrab, vUv);
     
     // First blend base with blink (if blinking)
     vec4 baseWithBlink = mix(base, blink, uBlinkMix);
     
-    // Then blend with hover expression (if hovering but not dragging)
+    // Then blend with hover expression (if hovering)
     vec4 withHover = mix(baseWithBlink, hover, uHoverMix);
     
-    // Finally blend with drag expression (highest priority)
-    gl_FragColor = mix(withHover, drag, uDragMix);
+    // Finally blend with grab expression (if grabbed) - takes priority
+    gl_FragColor = mix(withHover, grab, uGrabMix);
   }
 `;
 
-function FacePlane({ isHovered, isDragging, dragOffset, shiverOffset, dragScale }: { 
-  isHovered: boolean; 
-  isDragging: boolean;
-  dragOffset: { x: number; y: number };
-  shiverOffset: { x: number; y: number; rotation: number };
-  dragScale: number;
-}) {
+// Vertex shader for natural bending strand motion
+const strandVertexShader = `
+  uniform float uTime;
+  varying vec2 vUv;
+  
+  void main() {
+    vUv = uv;
+    
+    // Normalized distance from root (bottom = 0, top = 1)
+    float heightFactor = uv.y;
+    
+    // Primary sway
+    float primarySway = sin(uTime * ${(2.0 * Math.PI / SWAY_PERIOD).toFixed(4)}) * ${SWAY_AMPLITUDE.toFixed(4)};
+    
+    // Secondary irregularity
+    float secondarySway = sin(uTime * ${(2.0 * Math.PI / SWAY_SECONDARY_PERIOD).toFixed(4)} + 1.3) * ${SWAY_SECONDARY_AMPLITUDE.toFixed(4)};
+    
+    // Combine and scale by height (root stays still, tip moves most)
+    float totalSway = (primarySway + secondarySway) * heightFactor * heightFactor;
+    
+    vec3 pos = position;
+    pos.x += totalSway;
+    
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+  }
+`;
+
+const strandFragmentShader = `
+  uniform sampler2D uTexStrand;
+  varying vec2 vUv;
+  
+  void main() {
+    gl_FragColor = texture2D(uTexStrand, vUv);
+  }
+`;
+
+interface FacePlaneProps {
+  isHovered: boolean;
+  isGrabbed: boolean;
+  /** Cursor delta from grab-start, in canvas px (updated every frame while grabbed) */
+  cursorDelta: React.MutableRefObject<{ x: number; y: number }>;
+}
+
+function FacePlane({ isHovered, isGrabbed, cursorDelta }: FacePlaneProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   
-  // Load all textures including drag expression
+  // Load all textures including grabbed expression
   const [faceTexture, bleftTexture, brightTexture, ohhTexture, ughhTexture] = useTexture([
     '/hero/face.png',
     '/hero/bleft.png',
@@ -122,38 +200,188 @@ function FacePlane({ isHovered, isDragging, dragOffset, shiverOffset, dragScale 
   const stateTimer = useRef(0);
   const nextReflexTime = useRef(Date.now() + BLINK_REFLEX_INTERVAL);
   
+  // Grab interaction state
+  const grabExpressionMix = useRef(0); // 0 = normal, 1 = ughh.png
+  const grabScale = useRef(1); // Current grab scale value
+  const grabPositionY = useRef(0); // Current Y offset from grab
+  const grabStartTime = useRef(0);
+  const grabReleaseTime = useRef(0);
+  const wasGrabbed = useRef(false);
+
+  // Elastic cursor-follow state
+  const followX = useRef(0); // current lerped X follow offset (world units)
+  const followY = useRef(0); // current lerped Y follow offset
+  const followReleaseStartX = useRef(0); // X position at moment of release
+  const followReleaseStartY = useRef(0); // Y position at moment of release
+
+  // Shiver state
+  const shiverX = useRef(0);
+  const shiverY = useRef(0);
+  const lastShiverTime = useRef(0);
+  
   useFrame((state, delta) => {
     if (!materialRef.current || !meshRef.current) return;
     
     const time = state.clock.elapsedTime;
+    const now = Date.now();
+    const deltaMs = delta * 1000;
     
-    // ===== DRAG vs IDLE ANIMATION =====
-    if (isDragging) {
-      // DRAGGING: Apply drag position with resistance + shivering
-      meshRef.current.position.x = dragOffset.x + shiverOffset.x;
-      meshRef.current.position.y = dragOffset.y + shiverOffset.y;
-      meshRef.current.rotation.z = shiverOffset.rotation;
-      
-      // Use smooth scale transition when grabbed
-      meshRef.current.scale.set(dragScale, dragScale, 1);
+    // ===== GRAB INTERACTION =====
+    // Handle grab start
+    if (isGrabbed && !wasGrabbed.current) {
+      grabStartTime.current = now;
+      grabReleaseTime.current = 0;
+      wasGrabbed.current = true;
+      // Reset follow position to 0 at grab start
+      followX.current = 0;
+      followY.current = 0;
+    }
+    
+    // Handle grab release — snapshot follow position for return animation
+    if (!isGrabbed && wasGrabbed.current) {
+      grabReleaseTime.current = now;
+      followReleaseStartX.current = followX.current;
+      followReleaseStartY.current = followY.current;
+      wasGrabbed.current = false;
+    }
+
+    // Instant expression switch — no fade
+    const recoilElapsed = grabReleaseTime.current > 0 ? now - grabReleaseTime.current : 0;
+    const recoilHolding = !isGrabbed && grabReleaseTime.current > 0 && recoilElapsed < RECOIL_HOLD_DURATION;
+
+    if (isGrabbed || recoilHolding) {
+      grabExpressionMix.current = 1; // snap to squint
     } else {
-      // IDLE: Normal bounce animation
+      grabExpressionMix.current = 0; // snap back to idle
+    }
+
+    // ===== ELASTIC CURSOR-FOLLOW (while held) =====
+    if (isGrabbed) {
+      // Convert raw cursor delta (px) to world units (camera zoom = 200 → 1 world unit = 200 px)
+      const WORLD_PX = 200;
+      const rawX = cursorDelta.current.x;
+      const rawY = -cursorDelta.current.y; // canvas Y is flipped relative to screen Y
+
+      // Apply resistance damping
+      let targetX = rawX * FOLLOW_DAMPING / WORLD_PX;
+      let targetY = rawY * FOLLOW_DAMPING / WORLD_PX;
+
+      // Clamp to max offset radius (in world units)
+      const maxWorld = FOLLOW_MAX_OFFSET / WORLD_PX;
+      const dist = Math.sqrt(targetX * targetX + targetY * targetY);
+      if (dist > maxWorld) {
+        targetX = (targetX / dist) * maxWorld;
+        targetY = (targetY / dist) * maxWorld;
+      }
+
+      // Lerp toward clamped target for spring-lag feel
+      followX.current += (targetX - followX.current) * FOLLOW_LERP;
+      followY.current += (targetY - followY.current) * FOLLOW_LERP;
+
+      // Shiver: randomise micro-jitter at SHIVER_INTERVAL
+      if (now - lastShiverTime.current >= SHIVER_INTERVAL) {
+        const shiverWorld = SHIVER_AMPLITUDE / WORLD_PX;
+        shiverX.current = (Math.random() * 2 - 1) * shiverWorld;
+        shiverY.current = (Math.random() * 2 - 1) * shiverWorld;
+        lastShiverTime.current = now;
+      }
+    } else {
+      // Animate follow position back to 0 using the same spring
+      if (grabReleaseTime.current > 0) {
+        const effectiveElapsed = Math.max(0, recoilElapsed - RECOIL_HOLD_DURATION);
+        const t = effectiveElapsed / 1000; // seconds
+        const spring = dampedSpring(t, SPRING_STIFFNESS, SPRING_DAMPING);
+        followX.current = followReleaseStartX.current * spring;
+        followY.current = followReleaseStartY.current * spring;
+      } else {
+        followX.current = 0;
+        followY.current = 0;
+      }
+
+      // Clear shiver when not held
+      shiverX.current = 0;
+      shiverY.current = 0;
+    }
+
+    // Animate grab scale and position
+    let grabScaleValue = 1;
+    let grabYOffset = 0;
+    
+    if (isGrabbed) {
+      const grabElapsed = now - grabStartTime.current;
+      const t = Math.min(1, grabElapsed / GRAB_SCALE_DURATION);
+      
+      // Easing with undershoot for squish effect
+      if (t < 0.6) {
+        // First 60% - snap down to undershoot
+        const snapT = t / 0.6;
+        const eased = snapT * snapT * (3 - 2 * snapT); // smoothstep
+        grabScaleValue = 1 + (GRAB_SCALE_UNDERSHOOT - 1) * eased;
+        grabYOffset = GRAB_POSITION_DIP_PEAK * eased;
+      } else {
+        // Last 40% - settle back up to target
+        const settleT = (t - 0.6) / 0.4;
+        const eased = settleT * settleT * (3 - 2 * settleT); // smoothstep
+        grabScaleValue = GRAB_SCALE_UNDERSHOOT + (GRAB_SCALE_TARGET - GRAB_SCALE_UNDERSHOOT) * eased;
+        grabYOffset = GRAB_POSITION_DIP_PEAK + (GRAB_POSITION_DIP_REST - GRAB_POSITION_DIP_PEAK) * eased;
+      }
+      
+      grabScale.current = grabScaleValue;
+      grabPositionY.current = grabYOffset;
+    } else if (grabReleaseTime.current > 0) {
+      // Delay scale/position return by the recoil hold duration
+      const effectiveElapsed = Math.max(0, recoilElapsed - RECOIL_HOLD_DURATION);
+      const t = effectiveElapsed / 1000; // convert to seconds for spring
+
+      // Damped spring: starts at 1, rings toward 0
+      const spring = dampedSpring(t, SPRING_STIFFNESS, SPRING_DAMPING);
+
+      // Scale: starts at GRAB_SCALE_TARGET, springs to 1.0 with overshoot
+      // spring=1 → at grabbed scale, spring=0 → at rest (1.0), spring<0 → overshoot above 1.0
+      const scaleRange = 1.0 - GRAB_SCALE_TARGET;
+      grabScaleValue = 1.0 - spring * scaleRange * (1 + SPRING_SCALE_OVERSHOOT);
+      // Clamp so we never go below 0 (shouldn't happen with sane constants)
+      grabScaleValue = Math.max(0.5, grabScaleValue);
+
+      // Position Y: starts at GRAB_POSITION_DIP_REST, springs to 0 with overshoot
+      grabYOffset = GRAB_POSITION_DIP_REST * spring * (1 + SPRING_POSITION_OVERSHOOT);
+
+      grabScale.current = grabScaleValue;
+      grabPositionY.current = grabYOffset;
+
+      // Clear release once the spring has fully settled (spring < threshold)
+      const totalDuration = RECOIL_HOLD_DURATION + GRAB_RELEASE_DURATION;
+      if (recoilElapsed >= totalDuration) {
+        grabReleaseTime.current = 0;
+        grabScale.current = 1;
+        grabPositionY.current = 0;
+      }
+    }
+    
+    // ===== HOVER EXPRESSION TRANSITION =====
+    // Instant switch — disabled during grab or recoil
+    const grabActive = isGrabbed || recoilHolding;
+    const hoverMix = (isHovered && !grabActive) ? 1 : 0;
+    
+    // ===== NATURAL BOUNCE MOTION (always running — grab offsets layer on top) =====
+    let easedVertical = 0;
+    let horizontalDrift = 0;
+    let rotation = 0;
+    let scaleY = 1, scaleX = 1;
+    
+    if (!isGrabbed) {
+      // Idle bounce runs at all times when not actively held (including during spring release)
       const primaryVertical = Math.sin(time * (2 * Math.PI / BOUNCE_VERTICAL_PRIMARY_PERIOD));
       const secondaryVertical = Math.sin(time * (2 * Math.PI / BOUNCE_VERTICAL_SECONDARY_PERIOD) + 0.7);
       
-      const easedVertical = easeWithHangTime(primaryVertical) * BOUNCE_VERTICAL_PRIMARY_AMPLITUDE +
+      easedVertical = easeWithHangTime(primaryVertical) * BOUNCE_VERTICAL_PRIMARY_AMPLITUDE +
                             secondaryVertical * BOUNCE_VERTICAL_SECONDARY_AMPLITUDE;
       
-      const horizontalDrift = Math.sin(time * (2 * Math.PI / BOUNCE_HORIZONTAL_PERIOD) + 1.2) * BOUNCE_HORIZONTAL_AMPLITUDE;
-      const rotation = Math.sin(time * (2 * Math.PI / BOUNCE_HORIZONTAL_PERIOD) + 0.5) * BOUNCE_ROTATION_AMPLITUDE;
-      
-      meshRef.current.position.x = horizontalDrift;
-      meshRef.current.position.y = easedVertical;
-      meshRef.current.rotation.z = rotation;
+      horizontalDrift = Math.sin(time * (2 * Math.PI / BOUNCE_HORIZONTAL_PERIOD) + 1.2) * BOUNCE_HORIZONTAL_AMPLITUDE;
+      rotation = Math.sin(time * (2 * Math.PI / BOUNCE_HORIZONTAL_PERIOD) + 0.5) * BOUNCE_ROTATION_AMPLITUDE;
       
       // Squash and stretch
       const verticalPosition = primaryVertical;
-      let scaleY, scaleX;
       
       if (verticalPosition < 0) {
         const t = Math.abs(verticalPosition);
@@ -164,15 +392,20 @@ function FacePlane({ isHovered, isDragging, dragOffset, shiverOffset, dragScale 
         scaleY = 1 + (STRETCH_SCALE_Y_MAX - 1) * t;
         scaleX = 1 + (STRETCH_SCALE_X_MIN - 1) * t;
       }
-      
-      meshRef.current.scale.set(scaleX, scaleY, 1);
     }
     
-    // ===== BLINK ANIMATION (only when not hovering or dragging) =====
-    const now = Date.now();
-    const deltaMs = delta * 1000;
+    // Apply position (bounce + grab dip + elastic follow + shiver)
+    meshRef.current.position.y = easedVertical + grabPositionY.current + followY.current + (isGrabbed ? shiverY.current : 0);
+    meshRef.current.position.x = horizontalDrift + followX.current + (isGrabbed ? shiverX.current : 0);
+    meshRef.current.rotation.z = rotation;
     
-    if (!isHovered && !isDragging) {
+    // Apply scale (idle squash/stretch * grab scale)
+    const finalScaleY = scaleY * grabScale.current;
+    const finalScaleX = scaleX * grabScale.current;
+    meshRef.current.scale.set(finalScaleX, finalScaleY, 1);
+    
+    // ===== BLINK ANIMATION (paused only while actively held or in recoil beat) =====
+    if (!isHovered && !grabActive) {
       switch (blinkState) {
         case 'idle':
           if (now >= nextReflexTime.current) {
@@ -235,6 +468,7 @@ function FacePlane({ isHovered, isDragging, dragOffset, shiverOffset, dragScale 
       
       materialRef.current.uniforms.uTexBlink.value = currentBlinkTex;
     } else {
+      // When hovering or grabbed, reset blink state
       if (blinkState !== 'idle') {
         setBlinkState('idle');
         nextReflexTime.current = now + BLINK_REFLEX_INTERVAL;
@@ -243,16 +477,11 @@ function FacePlane({ isHovered, isDragging, dragOffset, shiverOffset, dragScale 
     }
     
     // ===== UPDATE SHADER UNIFORMS =====
-    // Expression priority: Drag > Hover > Normal
-    // When drag is released, immediately go back to hover or idle (not waiting for position to return)
-    const hoverMix = isHovered && !isDragging ? 1 : 0;
-    const dragMix = isDragging ? 1 : 0;
-    
     materialRef.current.uniforms.uTexBase.value = faceTexture;
     materialRef.current.uniforms.uTexHover.value = ohhTexture;
-    materialRef.current.uniforms.uTexDrag.value = ughhTexture;
+    materialRef.current.uniforms.uTexGrab.value = ughhTexture;
     materialRef.current.uniforms.uHoverMix.value = hoverMix;
-    materialRef.current.uniforms.uDragMix.value = dragMix;
+    materialRef.current.uniforms.uGrabMix.value = grabExpressionMix.current;
   });
   
   const shaderMaterial = useMemo(() => ({
@@ -260,10 +489,10 @@ function FacePlane({ isHovered, isDragging, dragOffset, shiverOffset, dragScale 
       uTexBase: { value: faceTexture },
       uTexBlink: { value: currentBlinkTex },
       uTexHover: { value: ohhTexture },
-      uTexDrag: { value: ughhTexture },
+      uTexGrab: { value: ughhTexture },
       uBlinkMix: { value: 0 },
       uHoverMix: { value: 0 },
-      uDragMix: { value: 0 },
+      uGrabMix: { value: 0 },
     },
     vertexShader: blinkVertexShader,
     fragmentShader: blinkFragmentShader,
@@ -278,151 +507,228 @@ function FacePlane({ isHovered, isDragging, dragOffset, shiverOffset, dragScale 
   );
 }
 
-function Scene({ onHoverChange }: { onHoverChange?: (hovered: boolean) => void }) {
-  const groupRef = useRef<THREE.Group>(null);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const hoverScale = useRef(1);
-  const dragScale = useRef(1); // Smooth scale for grab/release
+function StrandPlane({ isGrabbed }: { isGrabbed?: boolean }) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const materialRef = useRef<THREE.ShaderMaterial>(null);
+  const [hasStrand, setHasStrand] = useState(false);
   
-  // Drag state
-  const dragStart = useRef({ x: 0, y: 0 });
-  const dragCurrent = useRef({ x: 0, y: 0 });
-  const dragOffset = useRef({ x: 0, y: 0 }); // Character position with resistance
-  const shiverOffset = useRef({ x: 0, y: 0, rotation: 0 }); // Shivering motion
-  const canvasRect = useRef<DOMRect | null>(null);
+  // Grab state tracking
+  const grabPositionY = useRef(0);
+  const grabStartTime = useRef(0);
+  const grabReleaseTime = useRef(0);
+  const wasGrabbed = useRef(false);
   
-  // Global event listeners for drag outside canvas
-  useEffect(() => {
-    const handleGlobalPointerMove = (e: PointerEvent) => {
-      if (isDragging && canvasRect.current) {
-        const rect = canvasRect.current;
-        dragCurrent.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        dragCurrent.current.y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-      }
-    };
-    
-    const handleGlobalPointerUp = () => {
-      if (isDragging) {
-        setIsDragging(false);
-        setIsHovered(false);
-        onHoverChange?.(false);
-        document.body.style.cursor = 'default';
-      }
-    };
-    
-    if (isDragging) {
-      window.addEventListener('pointermove', handleGlobalPointerMove);
-      window.addEventListener('pointerup', handleGlobalPointerUp);
-      
-      return () => {
-        window.removeEventListener('pointermove', handleGlobalPointerMove);
-        window.removeEventListener('pointerup', handleGlobalPointerUp);
-      };
+  // Try to load strand texture, handle if it doesn't exist yet
+  let strandTexture: THREE.Texture | null = null;
+  try {
+    const textures = useTexture(['/hero/strand.png']);
+    strandTexture = textures as unknown as THREE.Texture;
+    if (strandTexture) {
+      strandTexture.minFilter = THREE.LinearFilter;
+      strandTexture.magFilter = THREE.LinearFilter;
+      setHasStrand(true);
     }
-  }, [isDragging, onHoverChange]);
+  } catch (error) {
+    // Strand texture doesn't exist yet - this is expected
+    console.log('Strand texture not found - strand animation will be hidden until strand.png is added to /public/hero/');
+  }
   
-  useFrame((state, delta) => {
-    if (!groupRef.current) return;
-    
-    const time = state.clock.elapsedTime;
-    
-    // ===== HOVER SCALE (only when not dragging) =====
-    if (!isDragging) {
-      const targetScale = isHovered ? HOVER_SCALE : 1.0;
-      hoverScale.current += (targetScale - hoverScale.current) * delta * HOVER_TRANSITION_SPEED;
-      groupRef.current.scale.set(hoverScale.current, hoverScale.current, 1);
-    }
-    
-    // ===== DRAG SCALE (smooth shrink/grow) =====
-    const targetDragScale = isDragging ? DRAG_SCALE_MIN : 1.0;
-    dragScale.current += (targetDragScale - dragScale.current) * delta * 10; // Fast smooth transition
-    
-    // ===== DRAG PHYSICS =====
-    if (isDragging) {
-      // Calculate pull direction and distance
-      const pullX = dragCurrent.current.x - dragStart.current.x;
-      const pullY = dragCurrent.current.y - dragStart.current.y;
+  useFrame((state) => {
+    if (materialRef.current && hasStrand && meshRef.current) {
+      const time = state.clock.elapsedTime;
+      const now = Date.now();
       
-      // Apply resistance (character doesn't move as far as cursor)
-      const targetX = pullX * (1 - DRAG_RESISTANCE);
-      const targetY = pullY * (1 - DRAG_RESISTANCE);
+      // Update shader time for internal bending sway
+      materialRef.current.uniforms.uTime.value = time;
       
-      // Smooth spring-like movement toward target
-      dragOffset.current.x += (targetX - dragOffset.current.x) * delta * 8;
-      dragOffset.current.y += (targetY - dragOffset.current.y) * delta * 8;
+      // ===== GRAB INTERACTION =====
+      // Track grab state changes
+      if (isGrabbed && !wasGrabbed.current) {
+        grabStartTime.current = now;
+        grabReleaseTime.current = 0;
+        wasGrabbed.current = true;
+      }
       
-      // Generate shivering/shaking effect
-      const shiverSpeed = time * SHIVER_FREQUENCY;
-      shiverOffset.current.x = Math.sin(shiverSpeed * 2.7) * SHIVER_AMPLITUDE;
-      shiverOffset.current.y = Math.cos(shiverSpeed * 3.1) * SHIVER_AMPLITUDE * 0.8;
-      shiverOffset.current.rotation = Math.sin(shiverSpeed * 2.3) * SHIVER_AMPLITUDE * 0.5;
-    } else {
-      // Not dragging - spring back to origin
-      dragOffset.current.x += (0 - dragOffset.current.x) * delta * DRAG_SPRING_STIFFNESS;
-      dragOffset.current.y += (0 - dragOffset.current.y) * delta * DRAG_SPRING_STIFFNESS;
+      if (!isGrabbed && wasGrabbed.current) {
+        grabReleaseTime.current = now;
+        wasGrabbed.current = false;
+      }
       
-      // Clear shiver
-      shiverOffset.current = { x: 0, y: 0, rotation: 0 };
+      // Animate grab position (match face plane's Y offset)
+      let grabYOffset = 0;
+      
+      if (isGrabbed) {
+        const grabElapsed = now - grabStartTime.current;
+        const t = Math.min(1, grabElapsed / GRAB_SCALE_DURATION);
+        
+        if (t < 0.6) {
+          const snapT = t / 0.6;
+          const eased = snapT * snapT * (3 - 2 * snapT);
+          grabYOffset = GRAB_POSITION_DIP_PEAK * eased;
+        } else {
+          const settleT = (t - 0.6) / 0.4;
+          const eased = settleT * settleT * (3 - 2 * settleT);
+          grabYOffset = GRAB_POSITION_DIP_PEAK + (GRAB_POSITION_DIP_REST - GRAB_POSITION_DIP_PEAK) * eased;
+        }
+        
+        grabPositionY.current = grabYOffset;
+      } else if (grabReleaseTime.current > 0) {
+        const releaseElapsed = now - grabReleaseTime.current;
+        // Delay return by recoil hold, matching FacePlane behaviour
+        const effectiveElapsed = Math.max(0, releaseElapsed - RECOIL_HOLD_DURATION);
+        const t = effectiveElapsed / 1000; // seconds
+        const spring = dampedSpring(t, SPRING_STIFFNESS, SPRING_DAMPING);
+
+        grabYOffset = GRAB_POSITION_DIP_REST * spring * (1 + SPRING_POSITION_OVERSHOOT);
+        grabPositionY.current = grabYOffset;
+        
+        const totalDuration = RECOIL_HOLD_DURATION + GRAB_RELEASE_DURATION;
+        if (releaseElapsed >= totalDuration) {
+          grabReleaseTime.current = 0;
+          grabPositionY.current = 0;
+        }
+      }
+      
+      // ===== INHERIT FACE POSITION (stay in sync with head) =====
+      // Idle bounce runs immediately when not held — grab offsets layer on top
+      let easedVertical = 0;
+      let horizontalDrift = 0;
+      let rotation = 0;
+      
+      if (!isGrabbed) {
+        // Match exact same position logic as FacePlane
+        const primaryVertical = Math.sin(time * (2 * Math.PI / BOUNCE_VERTICAL_PRIMARY_PERIOD));
+        const secondaryVertical = Math.sin(time * (2 * Math.PI / BOUNCE_VERTICAL_SECONDARY_PERIOD) + 0.7);
+        
+        easedVertical = easeWithHangTime(primaryVertical) * BOUNCE_VERTICAL_PRIMARY_AMPLITUDE +
+                              secondaryVertical * BOUNCE_VERTICAL_SECONDARY_AMPLITUDE;
+        
+        horizontalDrift = Math.sin(time * (2 * Math.PI / BOUNCE_HORIZONTAL_PERIOD) + 1.2) * BOUNCE_HORIZONTAL_AMPLITUDE;
+        
+        rotation = Math.sin(time * (2 * Math.PI / BOUNCE_HORIZONTAL_PERIOD) + 0.5) * BOUNCE_ROTATION_AMPLITUDE;
+      }
+      
+      // Apply position (idle bounce + grab offset)
+      meshRef.current.position.y = easedVertical + grabPositionY.current;
+      meshRef.current.position.x = horizontalDrift;
+      meshRef.current.rotation.z = rotation;
+      
+      // Keep scale neutral (no squash/stretch on strand, only on face)
+      // The strand has its own bending via vertex shader
+      meshRef.current.scale.set(1, 1, 1);
     }
   });
   
+  const shaderMaterial = useMemo(() => {
+    if (!strandTexture) return null;
+    
+    return {
+      uniforms: {
+        uTexStrand: { value: strandTexture },
+        uTime: { value: 0 },
+      },
+      vertexShader: strandVertexShader,
+      fragmentShader: strandFragmentShader,
+      transparent: true,
+    };
+  }, [strandTexture]);
+  
+  // Don't render if strand texture isn't available
+  if (!hasStrand || !shaderMaterial) {
+    return null;
+  }
+  
+  // Subdivide geometry vertically for bending (12-16 segments)
+  return (
+    <mesh ref={meshRef} position={[0, 0, 0.01]}>
+      <planeGeometry args={[2, 2, 1, 14]} />
+      <shaderMaterial ref={materialRef} {...shaderMaterial} />
+    </mesh>
+  );
+}
+
+function Scene({ onHoverChange }: { onHoverChange?: (hovered: boolean) => void }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isGrabbed, setIsGrabbed] = useState(false);
+  const isGrabbedRef = useRef(false); // ref copy so window listeners can read current value
+  const hoverScale = useRef(1);
+
+  // Cursor-follow tracking
+  const grabStartPos = useRef({ x: 0, y: 0 });   // canvas px at moment of grab
+  const cursorDelta = useRef({ x: 0, y: 0 });     // live delta from grab start (canvas px)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Global window listeners: mousemove tracks delta while grabbed (even outside canvas),
+  // pointerup releases the grab no matter where the cursor is.
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isGrabbedRef.current || !canvasRef.current) return;
+      const rect = canvasRef.current.getBoundingClientRect();
+      cursorDelta.current = {
+        x: e.clientX - rect.left - grabStartPos.current.x,
+        y: e.clientY - rect.top  - grabStartPos.current.y,
+      };
+    };
+
+    const onPointerUp = () => {
+      if (!isGrabbedRef.current) return;
+      isGrabbedRef.current = false;
+      setIsGrabbed(false);
+      cursorDelta.current = { x: 0, y: 0 };
+      // Cursor style: if still over the face it will re-trigger onPointerEnter,
+      // so just reset to default here.
+      document.body.style.cursor = 'default';
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('pointerup', onPointerUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, []);
+
+  useFrame((state, delta) => {
+    if (!groupRef.current) return;
+    
+    // Smooth scale transition on hover (disabled during grab)
+    const targetScale = (isHovered && !isGrabbed) ? HOVER_SCALE : 1.0;
+    hoverScale.current += (targetScale - hoverScale.current) * delta * HOVER_TRANSITION_SPEED;
+    
+    groupRef.current.scale.set(hoverScale.current, hoverScale.current, 1);
+  });
+  
   const handlePointerEnter = () => {
-    if (!isDragging) {
-      setIsHovered(true);
-      onHoverChange?.(true);
-    }
-    document.body.style.cursor = 'grab';
+    setIsHovered(true);
+    onHoverChange?.(true);
+    document.body.style.cursor = isGrabbedRef.current ? 'grabbing' : 'grab';
   };
   
   const handlePointerLeave = () => {
-    if (!isDragging) {
-      setIsHovered(false);
-      onHoverChange?.(false);
-      document.body.style.cursor = 'default';
-    }
-  };
-  
-  const handlePointerDown = (e: any) => {
-    e.stopPropagation();
-    setIsDragging(true);
+    // Only clear hover — do NOT release the grab when cursor leaves the mesh.
     setIsHovered(false);
     onHoverChange?.(false);
-    
-    // Store canvas rect for global move events
-    const rect = e.nativeEvent.target.getBoundingClientRect();
-    canvasRect.current = rect;
-    
-    // Store start position (in normalized canvas coordinates)
-    dragStart.current.x = ((e.nativeEvent.clientX - rect.left) / rect.width) * 2 - 1;
-    dragStart.current.y = -(((e.nativeEvent.clientY - rect.top) / rect.height) * 2 - 1);
-    
-    dragCurrent.current = { ...dragStart.current };
-    
-    document.body.style.cursor = 'grabbing';
-  };
-  
-  const handlePointerMove = (e: any) => {
-    if (isDragging) {
-      const rect = e.nativeEvent.target.getBoundingClientRect();
-      dragCurrent.current.x = ((e.nativeEvent.clientX - rect.left) / rect.width) * 2 - 1;
-      dragCurrent.current.y = -(((e.nativeEvent.clientY - rect.top) / rect.height) * 2 - 1);
-    }
-  };
-  
-  const handlePointerUp = (e: any) => {
-    if (isDragging) {
-      setIsDragging(false);
-      
-      // Always return to idle face when released (regardless of cursor position)
-      setIsHovered(false);
-      onHoverChange?.(false);
+    if (!isGrabbedRef.current) {
       document.body.style.cursor = 'default';
     }
   };
   
-  const handleClick = () => {
-    // Navigation removed - no action on click
+  const handlePointerDown = (e: React.PointerEvent) => {
+    // Snapshot the canvas element and grab-start position
+    const canvas = (e.nativeEvent.target as HTMLElement).closest('canvas') as HTMLCanvasElement | null;
+    if (canvas) {
+      canvasRef.current = canvas;
+      const rect = canvas.getBoundingClientRect();
+      grabStartPos.current = {
+        x: e.nativeEvent.clientX - rect.left,
+        y: e.nativeEvent.clientY - rect.top,
+      };
+    }
+    cursorDelta.current = { x: 0, y: 0 };
+    isGrabbedRef.current = true;
+    setIsGrabbed(true);
+    document.body.style.cursor = 'grabbing';
   };
   
   return (
@@ -439,17 +745,9 @@ function Scene({ onHoverChange }: { onHoverChange?: (hovered: boolean) => void }
         onPointerEnter={handlePointerEnter}
         onPointerLeave={handlePointerLeave}
         onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onClick={handleClick}
       >
-        <FacePlane 
-          isHovered={isHovered}
-          isDragging={isDragging}
-          dragOffset={dragOffset.current}
-          shiverOffset={shiverOffset.current}
-          dragScale={dragScale.current}
-        />
+        <FacePlane isHovered={isHovered} isGrabbed={isGrabbed} cursorDelta={cursorDelta} />
+        <StrandPlane isGrabbed={isGrabbed} />
       </group>
     </>
   );
@@ -460,7 +758,7 @@ export default function HeroFace() {
   const [isHovered, setIsHovered] = useState(false);
   
   return (
-    <div className="relative w-full h-screen bg-purple-100">
+    <div className="relative w-full h-screen bg-gradient-to-b from-slate-900 to-slate-800">
       {/* Loading fallback - static image */}
       {!isLoaded && (
         <div className="absolute inset-0 flex items-center justify-center">
@@ -486,6 +784,11 @@ export default function HeroFace() {
       >
         <Scene onHoverChange={setIsHovered} />
       </Canvas>
+      
+      {/* Dev note - remove in production */}
+      <div className="absolute top-4 right-4 text-xs text-white/50 bg-black/30 px-3 py-2 rounded backdrop-blur-sm">
+        💡 Add strand.png to /public/hero/ for full animation
+      </div>
     </div>
   );
 }
