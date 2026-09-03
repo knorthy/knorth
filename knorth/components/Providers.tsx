@@ -1,6 +1,7 @@
 "use client";
 
 import { ThemeProvider } from "next-themes";
+import { PageTransitionProvider } from "@/components/PageTransition";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -10,7 +11,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       storageKey="theme"
     >
-      {children}
+      <PageTransitionProvider>
+        {children}
+      </PageTransitionProvider>
     </ThemeProvider>
   );
 }
