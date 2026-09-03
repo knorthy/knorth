@@ -900,6 +900,12 @@ function FloatingDots() {
 
     const spawnStar = () => {
       const fromRight = Math.random() < 0.5;
+      let baseAngle: number;
+      if (fromRight) {
+        baseAngle = Math.PI - (Math.random() * 0.4 - 0.2) - Math.PI * 0.12;
+      } else {
+        baseAngle = (Math.random() * 0.4 - 0.2) + Math.PI * 0.12;
+      }
       const speed = Math.random() * 6 + 5;
       stars.push({
         x:     fromRight ? canvas.width * 0.4 + Math.random() * canvas.width * 0.6 : Math.random() * canvas.width * 0.6,
