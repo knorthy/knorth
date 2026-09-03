@@ -269,14 +269,15 @@ export default function Contact() {
     <section
       ref={sectionRef}
       id="contact"
-      className="min-h-screen flex items-center justify-center py-16 px-6 relative"
+      className="flex flex-col justify-center py-16 px-6 relative overflow-visible"
+      style={{ minHeight: "100svh" }}
     >
       {/* Galaxy dots */}
       <ContactDots />
 
       {/* Blobs */}
-      <div className="absolute pointer-events-none" style={{ top: "-15%", left: "-10%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
-      <div className="absolute pointer-events-none" style={{ bottom: "-10%", right: "-8%", width: 480, height: 480, borderRadius: "50%", background: "radial-gradient(circle, rgba(247,37,133,0.13) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
+      <div className="absolute pointer-events-none" style={{ top: "-5%", left: "-8%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
+      <div className="absolute pointer-events-none" style={{ bottom: "0%", right: "-8%", width: 480, height: 480, borderRadius: "50%", background: "radial-gradient(circle, rgba(247,37,133,0.13) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
       <div className="absolute pointer-events-none" style={{ top: "40%", right: "-12%", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)", filter: "blur(55px)", zIndex: 0 }} />
       {/* Large background text with scroll animation */}
       <motion.div 
@@ -300,7 +301,7 @@ export default function Contact() {
         </h3>
       </motion.div>
 
-      <div className="max-w-6xl mx-auto w-full relative z-10 pt-26 md:pt-38">
+      <div className="max-w-6xl mx-auto w-full relative z-10 flex flex-col justify-center flex-1 pt-25 md:pt-33">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* LEFT SIDE - Info */}
           <motion.div
@@ -504,7 +505,7 @@ export default function Contact() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="mt-20 pt-2 border-t border-foreground/5"
+          className="mt-10 pt-2 border-t border-foreground/5"
         >
           <div className="flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-foreground/40">
             <p>© 2026 Tiffany Lyssa. All rights reserved.</p>
