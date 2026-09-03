@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useRef, useMemo, useState, useEffect } from 'react';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useTexture, OrthographicCamera } from '@react-three/drei';
 import * as THREE from 'three';
+import { useRouter } from 'next/navigation';
 
 // ============= TIMING CONSTANTS =============
 // Blink timing
@@ -60,6 +61,19 @@ const SHIVER_INTERVAL = 65;         // ms — how often shiver offset is randomi
 
 // Release recoil
 const RECOIL_HOLD_DURATION = 120;   // ms — hold squint expression before starting return animation
+
+// Circle wipe transition
+const WIPE_ACCENT1  = '#f72585';
+const WIPE_ACCENT2  = '#b5ff4d';
+const WIPE_ACCENT3  = '#ffe566';
+const WIPE_ACCENT4  = '#a855f7';
+const WIPE_HOLD_DURATION   = 120;   // ms — pause at full coverage before reveal
+const WIPE_REVEAL_DURATION = 450;   // ms — final circle shrinks away on new page
+// How long after mouse release before the wipe starts expanding.
+// 0 = fires immediately on release. Higher = later into the rebound.
+// The full rebound takes ~770ms (RECOIL_HOLD_DURATION + GRAB_RELEASE_DURATION).
+// 385 ≈ halfway, 0 = on release, 770 = after fully settled.
+const WIPE_TRIGGER_DELAY = 130;     // ms
 // ============================================
 
 // Helper function: custom easing for natural breathing motion
@@ -171,9 +185,11 @@ interface FacePlaneProps {
   isGrabbed: boolean;
   /** Cursor delta from grab-start, in canvas px (updated every frame while grabbed) */
   cursorDelta: React.MutableRefObject<{ x: number; y: number }>;
+  /** Called once when the post-grab spring fully settles back to idle */
+  onGrabSettle?: () => void;
 }
 
-function FacePlane({ isHovered, isGrabbed, cursorDelta }: FacePlaneProps) {
+function FacePlane({ isHovered, isGrabbed, cursorDelta, onGrabSettle }: FacePlaneProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   
@@ -207,6 +223,7 @@ function FacePlane({ isHovered, isGrabbed, cursorDelta }: FacePlaneProps) {
   const grabStartTime = useRef(0);
   const grabReleaseTime = useRef(0);
   const wasGrabbed = useRef(false);
+  const hadGrab = useRef(false); // true once a grab-and-release has occurred (for settle detection)
 
   // Elastic cursor-follow state
   const followX = useRef(0); // current lerped X follow offset (world units)
@@ -232,6 +249,7 @@ function FacePlane({ isHovered, isGrabbed, cursorDelta }: FacePlaneProps) {
       grabStartTime.current = now;
       grabReleaseTime.current = 0;
       wasGrabbed.current = true;
+      hadGrab.current = true; // mark that a grab has happened — enables settle detection
       // Reset follow position to 0 at grab start
       followX.current = 0;
       followY.current = 0;
@@ -243,16 +261,24 @@ function FacePlane({ isHovered, isGrabbed, cursorDelta }: FacePlaneProps) {
       followReleaseStartX.current = followX.current;
       followReleaseStartY.current = followY.current;
       wasGrabbed.current = false;
+      // Fire wipe after WIPE_TRIGGER_DELAY ms into the rebound
+      if (hadGrab.current) {
+        setTimeout(() => onGrabSettle?.(), WIPE_TRIGGER_DELAY);
+      }
     }
 
     // Instant expression switch — no fade
     const recoilElapsed = grabReleaseTime.current > 0 ? now - grabReleaseTime.current : 0;
     const recoilHolding = !isGrabbed && grabReleaseTime.current > 0 && recoilElapsed < RECOIL_HOLD_DURATION;
 
-    if (isGrabbed || recoilHolding) {
-      grabExpressionMix.current = 1; // snap to squint
+    if (isGrabbed) {
+      grabExpressionMix.current = 1;
+      materialRef.current.uniforms.uTexGrab.value = ughhTexture; // squint while held
+    } else if (grabReleaseTime.current > 0) {
+      grabExpressionMix.current = 1;
+      materialRef.current.uniforms.uTexGrab.value = ohhTexture;  // ohh! on release — stays until wipe
     } else {
-      grabExpressionMix.current = 0; // snap back to idle
+      grabExpressionMix.current = 0; // back to idle (after spring clears)
     }
 
     // ===== ELASTIC CURSOR-FOLLOW (while held) =====
@@ -349,18 +375,19 @@ function FacePlane({ isHovered, isGrabbed, cursorDelta }: FacePlaneProps) {
       grabScale.current = grabScaleValue;
       grabPositionY.current = grabYOffset;
 
-      // Clear release once the spring has fully settled (spring < threshold)
+      // Clear release once the spring has fully settled
       const totalDuration = RECOIL_HOLD_DURATION + GRAB_RELEASE_DURATION;
       if (recoilElapsed >= totalDuration) {
         grabReleaseTime.current = 0;
         grabScale.current = 1;
         grabPositionY.current = 0;
+        hadGrab.current = false;
       }
     }
     
     // ===== HOVER EXPRESSION TRANSITION =====
-    // Instant switch — disabled during grab or recoil
-    const grabActive = isGrabbed || recoilHolding;
+    // Instant switch — disabled during grab or any post-release state
+    const grabActive = isGrabbed || grabReleaseTime.current > 0;
     const hoverMix = (isHovered && !grabActive) ? 1 : 0;
     
     // ===== NATURAL BOUNCE MOTION (always running — grab offsets layer on top) =====
@@ -479,7 +506,6 @@ function FacePlane({ isHovered, isGrabbed, cursorDelta }: FacePlaneProps) {
     // ===== UPDATE SHADER UNIFORMS =====
     materialRef.current.uniforms.uTexBase.value = faceTexture;
     materialRef.current.uniforms.uTexHover.value = ohhTexture;
-    materialRef.current.uniforms.uTexGrab.value = ughhTexture;
     materialRef.current.uniforms.uHoverMix.value = hoverMix;
     materialRef.current.uniforms.uGrabMix.value = grabExpressionMix.current;
   });
@@ -647,7 +673,7 @@ function StrandPlane({ isGrabbed }: { isGrabbed?: boolean }) {
   );
 }
 
-function Scene({ onHoverChange }: { onHoverChange?: (hovered: boolean) => void }) {
+function Scene({ onHoverChange, onGrabSettle }: { onHoverChange?: (hovered: boolean) => void; onGrabSettle?: () => void }) {
   const groupRef = useRef<THREE.Group>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isGrabbed, setIsGrabbed] = useState(false);
@@ -746,19 +772,197 @@ function Scene({ onHoverChange }: { onHoverChange?: (hovered: boolean) => void }
         onPointerLeave={handlePointerLeave}
         onPointerDown={handlePointerDown}
       >
-        <FacePlane isHovered={isHovered} isGrabbed={isGrabbed} cursorDelta={cursorDelta} />
+        <FacePlane isHovered={isHovered} isGrabbed={isGrabbed} cursorDelta={cursorDelta} onGrabSettle={onGrabSettle} />
         <StrandPlane isGrabbed={isGrabbed} />
       </group>
     </>
   );
 }
 
+// ─── Circle Wipe Transition ───────────────────────────────────────────────────
+// Multiple opaque circles burst from the same origin in sequence.
+// Each new circle overtakes the previous one — ripple/iris burst effect.
+const WIPE_COLORS = [WIPE_ACCENT3, WIPE_ACCENT2, WIPE_ACCENT1, WIPE_ACCENT4];
+// Each circle's burst duration (ms)
+const WIPE_BURST_DURATION = 320;
+// How many ms after the previous circle starts before the next one launches
+const WIPE_STAGGER = 180;
+// How long to hold full coverage before navigating (ms)
+// How long the final reveal takes (ms)
+
+interface CircleWipeProps {
+  origin: { x: number; y: number };
+  onCovered: () => void;
+  onDone: () => void;
+}
+
+function CircleWipe({ origin, onCovered, onDone }: CircleWipeProps) {
+  // Each circle gets its own radius state driven by a single rAF loop
+  const [radii, setRadii] = useState<number[]>(WIPE_COLORS.map(() => 0));
+  const [revealRadius, setRevealRadius] = useState<number | null>(null); // null = not yet revealing
+  const coveredFired = useRef(false);
+  const startTime = useRef<number | null>(null);
+
+  const maxR = Math.ceil(Math.sqrt(
+    Math.max(origin.x, window.innerWidth  - origin.x) ** 2 +
+    Math.max(origin.y, window.innerHeight - origin.y) ** 2
+  ));
+
+  useEffect(() => {
+    let raf: number;
+
+    const tick = (ts: number) => {
+      if (!startTime.current) startTime.current = ts;
+      const elapsed = ts - startTime.current;
+
+      // ── Burst phase ──────────────────────────────────────────────────────
+      const newRadii = WIPE_COLORS.map((_, i) => {
+        const circleStart = i * WIPE_STAGGER;
+        const t = Math.max(0, Math.min(1, (elapsed - circleStart) / WIPE_BURST_DURATION));
+        // easeInOut cubic
+        const eased = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+        return eased * maxR;
+      });
+      setRadii(newRadii);
+
+      // Last circle fully covers screen
+      const lastStart = (WIPE_COLORS.length - 1) * WIPE_STAGGER;
+      const lastT = Math.max(0, Math.min(1, (elapsed - lastStart) / WIPE_BURST_DURATION));
+
+      if (lastT >= 1 && !coveredFired.current) {
+        coveredFired.current = true;
+        onCovered();
+
+        // After hold, start reveal
+        const holdStart = ts;
+        const reveal = (ts2: number) => {
+          const re = ts2 - holdStart;
+          if (re < WIPE_HOLD_DURATION) {
+            raf = requestAnimationFrame(reveal);
+            return;
+          }
+          // easeOut cubic shrink of final circle
+          const rt = Math.min(1, (re - WIPE_HOLD_DURATION) / WIPE_REVEAL_DURATION);
+          const reased = 1 - (1 - rt) ** 3;
+          setRevealRadius((1 - reased) * maxR);
+          if (rt < 1) {
+            raf = requestAnimationFrame(reveal);
+          } else {
+            onDone();
+          }
+        };
+        raf = requestAnimationFrame(reveal);
+        return; // stop burst loop
+      }
+
+      if (lastT < 1) raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden">
+      {WIPE_COLORS.map((color, i) => {
+        // During reveal, only the last circle shrinks; others stay full
+        const isLast = i === WIPE_COLORS.length - 1;
+        const r = revealRadius !== null
+          ? (isLast ? revealRadius : maxR)
+          : radii[i];
+        return (
+          <div
+            key={i}
+            className="absolute inset-0"
+            style={{
+              backgroundColor: color,
+              clipPath: `circle(${r}px at ${origin.x}px ${origin.y}px)`,
+              willChange: 'clip-path',
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+// Doodle frames cycle: 1 → 2 → 3 → 2 → repeat (hand-drawn wiggle effect)
+const DOODLE_FRAMES = ['/hero/1.png', '/hero/2.png', '/hero/3.png', '/hero/2.png'];
+const DOODLE_FPS = 500; // ms per frame
+
+function DoodleText() {
+  const [frame, setFrame] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setFrame(f => (f + 1) % DOODLE_FRAMES.length);
+    }, DOODLE_FPS);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <img
+      src={DOODLE_FRAMES[frame]}
+      alt="doodle text"
+      style={{ imageRendering: 'pixelated' }}
+      className="w-auto h-auto max-w-[260px] select-none pointer-events-none"
+    />
+  );
+}
+
+// Interaction hint frames: int1 → int2 → repeat
+const INT_FRAMES = ['/hero/int1.png', '/hero/int2.png'];
+const INT_FPS = 500; // ms per frame
+
+function DoodleInteract() {
+  const [frame, setFrame] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setFrame(f => (f + 1) % INT_FRAMES.length);
+    }, INT_FPS);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <img
+      src={INT_FRAMES[frame]}
+      alt="interaction hint"
+      style={{ imageRendering: 'pixelated' }}
+      className="w-auto h-auto max-w-[260px] select-none pointer-events-none"
+    />
+  );
+}
+
 export default function HeroFace() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  
+  const router = useRouter();
+
+  // Circle wipe state
+  const [wipeOrigin, setWipeOrigin] = useState<{ x: number; y: number } | null>(null);
+  const [wipeActive, setWipeActive] = useState(false);
+
+  // Called by FacePlane once the spring fully settles after a grab-and-release
+  const handleGrabSettle = useCallback(() => {
+    // Origin = centre of the viewport (where the character lives)
+    const origin = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    setWipeOrigin(origin);
+    setWipeActive(true);
+  }, []);
+
+  const handleWipeCovered = useCallback(() => {
+    // Navigate while the screen is fully covered
+    router.push('/home');
+  }, [router]);
+
+  const handleWipeDone = useCallback(() => {
+    setWipeActive(false);
+    setWipeOrigin(null);
+  }, []);
+
   return (
-    <div className="relative w-full h-screen bg-gradient-to-b from-slate-900 to-slate-800">
+    <div className="relative w-full h-screen" style={{ background: '#0e0e0e' }}>
       {/* Loading fallback - static image */}
       {!isLoaded && (
         <div className="absolute inset-0 flex items-center justify-center">
@@ -774,7 +978,6 @@ export default function HeroFace() {
       <Canvas
         className={`transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
         onCreated={() => {
-          // Small delay to ensure textures are ready
           setTimeout(() => setIsLoaded(true), 100);
         }}
         gl={{
@@ -782,13 +985,31 @@ export default function HeroFace() {
           alpha: true,
         }}
       >
-        <Scene onHoverChange={setIsHovered} />
+        <Scene onHoverChange={setIsHovered} onGrabSettle={handleGrabSettle} />
       </Canvas>
-      
-      {/* Dev note - remove in production */}
-      <div className="absolute top-4 right-4 text-xs text-white/50 bg-black/30 px-3 py-2 rounded backdrop-blur-sm">
-        💡 Add strand.png to /public/hero/ for full animation
+
+      {/* Doodle text — left side of character */}
+      <div className="absolute inset-0 flex items-center pointer-events-none">
+        <div className="w-1/2 flex justify-center">
+          <DoodleText />
+        </div>
       </div>
+
+      {/* Interaction hint — right side of character */}
+      <div className="absolute inset-0 flex items-center pointer-events-none">
+        <div className="w-1/2 ml-auto flex justify-center">
+          <DoodleInteract />
+        </div>
+      </div>
+
+      {/* Circle wipe — mounts only when triggered */}
+      {wipeActive && wipeOrigin && (
+        <CircleWipe
+          origin={wipeOrigin}
+          onCovered={handleWipeCovered}
+          onDone={handleWipeDone}
+        />
+      )}
     </div>
   );
 }
