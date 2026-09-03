@@ -269,10 +269,15 @@ export default function Contact() {
     <section
       ref={sectionRef}
       id="contact"
-      className="min-h-screen flex items-center justify-center py-16 px-6 relative overflow-hidden"
+      className="min-h-screen flex items-center justify-center py-16 px-6 relative"
     >
       {/* Galaxy dots */}
       <ContactDots />
+
+      {/* Blobs */}
+      <div className="absolute pointer-events-none" style={{ top: "-15%", left: "-10%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
+      <div className="absolute pointer-events-none" style={{ bottom: "-10%", right: "-8%", width: 480, height: 480, borderRadius: "50%", background: "radial-gradient(circle, rgba(247,37,133,0.13) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
+      <div className="absolute pointer-events-none" style={{ top: "40%", right: "-12%", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)", filter: "blur(55px)", zIndex: 0 }} />
       {/* Large background text with scroll animation */}
       <motion.div 
         className="absolute top-[-4%] left-1/2 -translate-x-1/2 pointer-events-none select-none"

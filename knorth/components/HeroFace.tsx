@@ -884,21 +884,50 @@ function FloatingDots() {
       };
     });
 
+    // ── Shooting stars ────────────────────────────────────────────────────
+    interface Star {
+      x: number; y: number;
+      vx: number; vy: number;
+      len: number;
+      life: number;
+      speed: number;
+      color: string;
+    }
+
+    const STAR_COLORS = ['#ffffff', '#ffffff', '#ffffff', '#f72585', '#b5ff4d', '#ffe566', '#a855f7'];
+    const stars: Star[] = [];
+    let nextStarIn = 0;
+
+    const spawnStar = () => {
+      const fromRight = Math.random() < 0.5;
+      const speed = Math.random() * 6 + 5;
+      stars.push({
+        x:     fromRight ? canvas.width * 0.4 + Math.random() * canvas.width * 0.6 : Math.random() * canvas.width * 0.6,
+        y:     Math.random() * canvas.height,
+        vx:    Math.cos(baseAngle) * speed,
+        vy:    Math.sin(baseAngle) * speed,
+        len:   Math.random() * 60 + 30,
+        life:  0,
+        speed,
+        color: STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)],
+      });
+      nextStarIn = Math.floor(Math.random() * 180 + 60);
+    };
+
+    let frameCount = 0;
+
     let raf: number;
     const tick = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const mx = mouse.current.x;
       const my = mouse.current.y;
 
+      // ── Dots ──────────────────────────────────────────────────────────
       for (const d of dots) {
-        // Advance orbit angle
         d.angle += d.orbitSpeed;
-
-        // Orbit target — the idle "resting" spot is this orbital position
         const targetX = d.ox + Math.cos(d.angle) * d.orbitR;
         const targetY = d.oy + Math.sin(d.angle) * d.orbitR;
 
-        // Repulsion from cursor
         const dx = d.x - mx;
         const dy = d.y - my;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -908,14 +937,10 @@ function FloatingDots() {
           d.vy += (dy / dist) * force * REPEL_STRENGTH;
         }
 
-        // Spring back toward orbit target (not static home)
         d.vx += (targetX - d.x) * RETURN_SPRING;
         d.vy += (targetY - d.y) * RETURN_SPRING;
-
-        // Dampen
         d.vx *= DAMPING;
         d.vy *= DAMPING;
-
         d.x += d.vx;
         d.y += d.vy;
 
@@ -925,9 +950,56 @@ function FloatingDots() {
         ctx.globalAlpha = d.opacity;
         ctx.fill();
       }
+
+      // ── Shooting stars ─────────────────────────────────────────────────
+      frameCount++;
+      if (frameCount >= nextStarIn) {
+        spawnStar();
+        frameCount = 0;
+      }
+
+      for (let i = stars.length - 1; i >= 0; i--) {
+        const s = stars[i];
+        s.life += s.speed / 400;
+        s.x += s.vx;
+        s.y += s.vy;
+
+        const alpha = s.life < 0.2
+          ? s.life / 0.2
+          : s.life > 0.7
+            ? 1 - (s.life - 0.7) / 0.3
+            : 1;
+
+        const tailX = s.x - s.vx / s.speed * s.len;
+        const tailY = s.y - s.vy / s.speed * s.len;
+        const grad = ctx.createLinearGradient(tailX, tailY, s.x, s.y);
+        grad.addColorStop(0, 'transparent');
+        grad.addColorStop(1, s.color);
+
+        ctx.beginPath();
+        ctx.moveTo(tailX, tailY);
+        ctx.lineTo(s.x, s.y);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = Math.random() * 0.5 + 0.8;
+        ctx.globalAlpha = alpha * 0.7;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, 1.2, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = alpha * 0.9;
+        ctx.fill();
+
+        if (s.life >= 1 || s.x > canvas.width + 50 || s.x < -50 || s.y > canvas.height + 50) {
+          stars.splice(i, 1);
+        }
+      }
+
       ctx.globalAlpha = 1;
       raf = requestAnimationFrame(tick);
     };
+
+    spawnStar();
     raf = requestAnimationFrame(tick);
 
     return () => {

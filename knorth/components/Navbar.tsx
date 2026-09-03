@@ -1,15 +1,13 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useTheme } from 'next-themes';
-import { Sun, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { usePageTransition } from '@/components/PageTransition';
 
 export default function Navbar() {
-  const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
+  const [resumeHovered, setResumeHovered] = useState(false);
   const pathname = usePathname();
   const { navigate } = usePageTransition();
 
@@ -40,7 +38,6 @@ export default function Navbar() {
   }, []);
 
   if (!mounted) return null;
-  const isDark = resolvedTheme === 'dark';
   const isOnRoot = pathname === '/';
 
   const handleLogoClick = (e: React.MouseEvent) => {
@@ -86,21 +83,30 @@ export default function Navbar() {
         </div>
       </div>
 
-      <div onClick={() => setTheme(isDark ? 'light' : 'dark')} className="cursor-pointer">
-        <div className="relative w-16 h-9 px-1 flex items-center shadow-inner rounded-[18px] backdrop-blur-md bg-white/5 border border-white/10">
-          <motion.div
-            className="absolute z-10 flex items-center justify-center w-7 h-7 bg-[#f72585] rounded-full shadow-md"
-            animate={{ x: isDark ? 28 : 0 }}
-            transition={{ type: "spring", stiffness: 500, damping: 30 }}
-          >
-            {isDark ? <Moon size={14} className="text-white" /> : <Sun size={14} className="text-white" />}
-          </motion.div>
-          <div className="flex justify-between w-full px-1 opacity-40">
-            <Sun size={14} className="text-gray-400" />
-            <Moon size={14} className="text-gray-400" />
-          </div>
-        </div>
-      </div>
+      {/* Resume / Hire Me button */}
+      <motion.a
+        href="#"
+        onMouseEnter={() => setResumeHovered(true)}
+        onMouseLeave={() => setResumeHovered(false)}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.97 }}
+        className="relative px-5 py-2 rounded-full text-sm font-bold tracking-wide backdrop-blur-md"
+        style={{
+          background: resumeHovered
+            ? 'rgba(247, 37, 133, 0.25)'
+            : 'rgba(255, 255, 255, 0.07)',
+          border: resumeHovered
+            ? '1px solid rgba(247, 37, 133, 0.6)'
+            : '1px solid rgba(255, 255, 255, 0.15)',
+          color: resumeHovered ? '#f72585' : 'rgba(255,255,255,0.75)',
+          boxShadow: resumeHovered
+            ? '0 4px 24px rgba(247,37,133,0.25), inset 0 1px 0 rgba(255,255,255,0.1)'
+            : '0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.08)',
+          transition: 'background 0.25s, border 0.25s, color 0.25s, box-shadow 0.25s',
+        }}
+      >
+        {resumeHovered ? 'Hire Me' : 'Resume'}
+      </motion.a>
     </nav>
   );
 }

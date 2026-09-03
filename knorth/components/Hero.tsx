@@ -13,6 +13,130 @@ const ACCENT2 = "#b5ff4d";
 const ACCENT3 = "#ffe566";
 const ACCENT4 = "#a855f7";
 
+// ── GalaxyCanvas ─────────────────────────────────────────────────────────────
+const GALAXY_COLORS = ["#ffffff", ACCENT, ACCENT2, ACCENT3, ACCENT4];
+
+interface GDot {
+  x: number; y: number; ox: number; oy: number;
+  angle: number; orbitR: number; orbitSpeed: number;
+  size: number; color: string; vx: number; vy: number; opacity: number;
+}
+
+function GalaxyCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mouse = useRef({ x: -9999, y: -9999 });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const resize = () => {
+      const rect = canvas.parentElement?.getBoundingClientRect();
+      canvas.width  = rect?.width  ?? window.innerWidth;
+      canvas.height = rect?.height ?? window.innerHeight;
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    if (canvas.parentElement) ro.observe(canvas.parentElement);
+
+    const onMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    };
+    const onMouseLeave = () => { mouse.current = { x: -9999, y: -9999 }; };
+    canvas.parentElement?.addEventListener("mousemove", onMouseMove);
+    canvas.parentElement?.addEventListener("mouseleave", onMouseLeave);
+
+    const COUNT = 120;
+    const REPEL_RADIUS = 90; const REPEL_STRENGTH = 0.55;
+    const RETURN_SPRING = 0.04; const DAMPING = 0.80;
+
+    const dots: GDot[] = Array.from({ length: COUNT }, (_, i) => {
+      // First 30 dots biased to the top third, rest spread full height
+      const ox = Math.random() * canvas.width;
+      const oy = i < 60
+        ? Math.random() * canvas.height * 0.35
+        : Math.random() * canvas.height;
+      const angle = Math.random() * Math.PI * 2;
+      const orbitR = Math.random() * 18 + 4;
+      const orbitSpeed = (Math.random() * 0.004 + 0.001) * (Math.random() < 0.5 ? 1 : -1);
+      return { x: ox + Math.cos(angle) * orbitR, y: oy + Math.sin(angle) * orbitR, ox, oy, angle, orbitR, orbitSpeed,
+        size: Math.random() * 2.5 + 1, color: GALAXY_COLORS[Math.floor(Math.random() * GALAXY_COLORS.length)],
+        vx: 0, vy: 0, opacity: Math.random() * 0.45 + 0.1 };
+    });
+
+    interface Star { x: number; y: number; vx: number; vy: number; len: number; life: number; speed: number; color: string; }
+    const STAR_COLORS = ["#ffffff","#ffffff","#ffffff", ACCENT, ACCENT2, ACCENT3, ACCENT4];
+    const stars: Star[] = [];
+    let nextStarIn = 0; let frameCount = 0;
+
+    const spawnStar = () => {
+      const fromRight = Math.random() < 0.5;
+      const baseAngle = fromRight ? Math.PI - (Math.random() * 0.4 - 0.2) - Math.PI * 0.12 : (Math.random() * 0.4 - 0.2) + Math.PI * 0.12;
+      const speed = Math.random() * 6 + 5;
+      stars.push({ x: fromRight ? canvas.width * 0.4 + Math.random() * canvas.width * 0.6 : Math.random() * canvas.width * 0.6,
+        y: Math.random() * canvas.height, vx: Math.cos(baseAngle) * speed, vy: Math.sin(baseAngle) * speed,
+        len: Math.random() * 60 + 30, life: 0, speed, color: STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)] });
+      nextStarIn = Math.floor(Math.random() * 180 + 60);
+    };
+
+    let raf: number;
+    const tick = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const mx = mouse.current.x; const my = mouse.current.y;
+
+      for (const d of dots) {
+        d.angle += d.orbitSpeed;
+        const tx = d.ox + Math.cos(d.angle) * d.orbitR;
+        const ty = d.oy + Math.sin(d.angle) * d.orbitR;
+        const dx = d.x - mx; const dy = d.y - my;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < REPEL_RADIUS && dist > 0) {
+          const f = (REPEL_RADIUS - dist) / REPEL_RADIUS;
+          d.vx += (dx / dist) * f * REPEL_STRENGTH;
+          d.vy += (dy / dist) * f * REPEL_STRENGTH;
+        }
+        d.vx += (tx - d.x) * RETURN_SPRING; d.vy += (ty - d.y) * RETURN_SPRING;
+        d.vx *= DAMPING; d.vy *= DAMPING; d.x += d.vx; d.y += d.vy;
+        ctx.beginPath(); ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+        ctx.fillStyle = d.color; ctx.globalAlpha = d.opacity; ctx.fill();
+      }
+
+      frameCount++;
+      if (frameCount >= nextStarIn) { spawnStar(); frameCount = 0; }
+
+      for (let i = stars.length - 1; i >= 0; i--) {
+        const s = stars[i];
+        s.life += s.speed / 400; s.x += s.vx; s.y += s.vy;
+        const alpha = s.life < 0.2 ? s.life / 0.2 : s.life > 0.7 ? 1 - (s.life - 0.7) / 0.3 : 1;
+        const tailX = s.x - s.vx / s.speed * s.len; const tailY = s.y - s.vy / s.speed * s.len;
+        const grad = ctx.createLinearGradient(tailX, tailY, s.x, s.y);
+        grad.addColorStop(0, "transparent"); grad.addColorStop(1, s.color);
+        ctx.beginPath(); ctx.moveTo(tailX, tailY); ctx.lineTo(s.x, s.y);
+        ctx.strokeStyle = grad; ctx.lineWidth = 0.8 + Math.random() * 0.5;
+        ctx.globalAlpha = alpha * 0.7; ctx.stroke();
+        ctx.beginPath(); ctx.arc(s.x, s.y, 1.2, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff"; ctx.globalAlpha = alpha * 0.9; ctx.fill();
+        if (s.life >= 1 || s.x > canvas.width + 50 || s.x < -50 || s.y > canvas.height + 50) stars.splice(i, 1);
+      }
+      ctx.globalAlpha = 1;
+      raf = requestAnimationFrame(tick);
+    };
+    spawnStar();
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(raf); ro.disconnect();
+      canvas.parentElement?.removeEventListener("mousemove", onMouseMove);
+      canvas.parentElement?.removeEventListener("mouseleave", onMouseLeave);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }} />;
+}
+
 // ── ColorTypewriter ──────────────────────────────────────────────────────────
 function ColorTypewriter({ strings, colors }: { strings: string[]; colors: string[] }) {
   const [idx, setIdx] = useState(0);
@@ -358,7 +482,7 @@ function GalleryWithCursor() {
       onMouseUp={handleMouseUp}
       style={{ height: "600px", width: "100%", position: "relative", marginTop: "-80px", cursor: "none" }}
     >
-      <CircularGallery bend={1} textColor="#ffffff" borderRadius={0.05} scrollEase={0.05} font="bold 30px Figtree" scrollSpeed={2} />
+      <CircularGallery bend={1} textColor="#ffffff" borderRadius={0.05} scrollEase={0.05} font="bold 30px Geist" scrollSpeed={2} />
 
       {/* Pill cursor — mirrors TiltedCard figcaption behavior */}
       <motion.div
@@ -402,6 +526,26 @@ export default function Hero() {
 
       {/* HOME */}
       <section className="relative flex flex-col items-center justify-start pt-4 min-h-screen px-6 max-w-6xl mx-auto w-full">
+        {/* Galaxy dots + shooting stars */}
+        <GalaxyCanvas />
+        {/* Masked grid background */}
+        <div className="absolute pointer-events-none" style={{
+          top: 0,
+          left: "-10%",
+          right: "-10%",
+          height: "100%",
+          backgroundImage: "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
+          backgroundSize: "50px 50px",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 18%, black 45%, transparent 100%), linear-gradient(to right, transparent 0%, black 18%, black 100%)",
+          WebkitMaskComposite: "destination-in",
+          maskImage: "linear-gradient(to bottom, transparent 0%, black 18%, black 45%, transparent 100%), linear-gradient(to right, transparent 0%, black 18%, black 100%)",
+          maskComposite: "intersect",
+          zIndex: 0,
+        }} />
+        {/* Blobs */}
+        <div className="absolute pointer-events-none" style={{ top: "-10%", left: "-15%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(168,85,247,0.25) 0%, transparent 70%)", filter: "blur(50px)", zIndex: 0 }} />
+        <div className="absolute pointer-events-none" style={{ top: "30%", right: "-10%", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(247,37,133,0.20) 0%, transparent 70%)", filter: "blur(45px)", zIndex: 0 }} />
+        <div className="absolute pointer-events-none" style={{ bottom: "-5%", left: "20%", width: 420, height: 420, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%)", filter: "blur(48px)", zIndex: 0 }} />
         <img src="/stickers/1.png" aria-hidden="true" className="pointer-events-none select-none absolute w-36 h-36 object-contain" style={{ rotate: "-15deg", zIndex: 0, top: "8%",    left: "-2%" }} />
         <img src="/stickers/2.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "12deg",  zIndex: 0, top: "5%",    right: "5%" }} />
         <img src="/stickers/3.png" aria-hidden="true" className="pointer-events-none select-none absolute w-28 h-28 object-contain" style={{ rotate: "20deg",  zIndex: 0, bottom: "12%", left: "30%" }} />
@@ -470,6 +614,9 @@ export default function Hero() {
 
       {/* ABOUT */}
       <section id="about" className="relative flex flex-col items-center justify-center min-h-screen px-6 max-w-6xl mx-auto w-full">
+        {/* Blobs */}
+        <div className="absolute pointer-events-none" style={{ top: "-5%", right: "-10%", width: 480, height: 480, borderRadius: "50%", background: "radial-gradient(circle, rgba(251,113,33,0.22) 0%, transparent 70%)", filter: "blur(50px)", zIndex: 0 }} />
+        <div className="absolute pointer-events-none" style={{ bottom: "0%", left: "-12%", width: 440, height: 440, borderRadius: "50%", background: "radial-gradient(circle, rgba(168,85,247,0.22) 0%, transparent 70%)", filter: "blur(48px)", zIndex: 0 }} />
         <img src="/stickers/7.png" aria-hidden="true" className="pointer-events-none select-none absolute w-28 h-28 object-contain" style={{ rotate: "-10deg", zIndex: 0, top: "6%",    left: "2%" }} />
         <img src="/stickers/4.png" aria-hidden="true" className="pointer-events-none select-none absolute w-36 h-36 object-contain" style={{ zIndex: 0, top: "35%", right: "-6%", transform: "translateY(-50%) rotate(10deg)" }} />
         <img src="/stickers/5.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "-18deg", zIndex: 0, top: "50%", left: "-8%", transform: "translateY(-50%) rotate(-18deg)" }} />
@@ -529,6 +676,9 @@ export default function Hero() {
 
       {/* PROJECTS */}
       <section id="projects" className="relative min-h-screen flex flex-col items-center justify-center py-16">
+        {/* Blobs */}
+        <div className="absolute pointer-events-none" style={{ top: "5%", left: "-8%", width: 460, height: 460, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%)", filter: "blur(50px)", zIndex: 0 }} />
+        <div className="absolute pointer-events-none" style={{ bottom: "5%", right: "-8%", width: 420, height: 420, borderRadius: "50%", background: "radial-gradient(circle, rgba(168,85,247,0.22) 0%, transparent 70%)", filter: "blur(46px)", zIndex: 0 }} />
         <img src="/stickers/7.png" aria-hidden="true" className="pointer-events-none select-none absolute w-36 h-36 object-contain" style={{ rotate: "-12deg", zIndex: 0, top: "8%",    left: "5%" }} />
         <img src="/stickers/1.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "18deg",  zIndex: 0, top: "15%",   right: "8%" }} />
         <img src="/stickers/4.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "8deg",   zIndex: 0, bottom: "10%", left: "45%" }} />
@@ -545,6 +695,9 @@ export default function Hero() {
 
       {/* EXPERIENCE */}
       <section id="experience" className="relative min-h-screen flex flex-col justify-center py-24 px-6 max-w-6xl mx-auto w-full">
+        {/* Blobs */}
+        <div className="absolute pointer-events-none" style={{ top: "-20%", left: "-20%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(251,113,33,0.10) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
+        <div className="absolute pointer-events-none" style={{ bottom: "-10%", right: "-10%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
         <img src="/stickers/2.png" aria-hidden="true" className="pointer-events-none select-none absolute w-36 h-36 object-contain" style={{ zIndex: 0, top: "42%", right: "8%", transform: "translateY(-50%) rotate(-8deg)" }} />
         <img src="/stickers/5.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "14deg",  zIndex: 0, top: "3%",    left: "55%" }} />
         <img src="/stickers/6.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ zIndex: 0, top: "50%", left: "-10%", transform: "translateY(-50%) rotate(-18deg)" }} />
