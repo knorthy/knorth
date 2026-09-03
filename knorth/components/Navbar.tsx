@@ -3,11 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { usePathname } from 'next/navigation';
+import { usePageTransition } from '@/components/PageTransition';
 
 export default function Navbar() {
   const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
+  const pathname = usePathname();
+  const { navigate } = usePageTransition();
 
   useEffect(() => {
     setMounted(true);
@@ -37,11 +41,21 @@ export default function Navbar() {
 
   if (!mounted) return null;
   const isDark = resolvedTheme === 'dark';
+  const isOnRoot = pathname === '/';
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isOnRoot) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      navigate('/', e.clientX, e.clientY);
+    }
+  };
 
   return (
     <nav className="fixed top-6 left-0 right-0 z-50 flex items-center justify-between px-6">
       <div className="flex items-center">
-        <a href="#home" className="text-2xl font-bold text-[#f72585]">Knorth</a>
+        <a href="/" onClick={handleLogoClick} className="text-2xl font-bold text-[#f72585]">TIFFANY</a>
       </div>
 
       <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-8 px-10 py-3 shadow-xl rounded-[20px] backdrop-blur-md bg-white/5 dark:bg-white/5 border border-white/10">

@@ -5,6 +5,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { useTexture, OrthographicCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { useRouter } from 'next/navigation';
+import { CircleWipe } from '@/components/CircleWipe';
 
 // ============= TIMING CONSTANTS =============
 // Blink timing
@@ -62,18 +63,8 @@ const SHIVER_INTERVAL = 65;         // ms — how often shiver offset is randomi
 // Release recoil
 const RECOIL_HOLD_DURATION = 120;   // ms — hold squint expression before starting return animation
 
-// Circle wipe transition
-const WIPE_ACCENT1  = '#f72585';
-const WIPE_ACCENT2  = '#b5ff4d';
-const WIPE_ACCENT3  = '#ffe566';
-const WIPE_ACCENT4  = '#a855f7';
-const WIPE_HOLD_DURATION   = 120;   // ms — pause at full coverage before reveal
-const WIPE_REVEAL_DURATION = 450;   // ms — final circle shrinks away on new page
-// How long after mouse release before the wipe starts expanding.
-// 0 = fires immediately on release. Higher = later into the rebound.
-// The full rebound takes ~770ms (RECOIL_HOLD_DURATION + GRAB_RELEASE_DURATION).
-// 385 ≈ halfway, 0 = on release, 770 = after fully settled.
-const WIPE_TRIGGER_DELAY = 130;     // ms
+// Circle wipe transition — colors and timing (shared with CircleWipe.tsx)
+const WIPE_TRIGGER_DELAY = 130;     // ms — how long after mouse release before the wipe starts
 // ============================================
 
 // Helper function: custom easing for natural breathing motion
@@ -779,113 +770,6 @@ function Scene({ onHoverChange, onGrabSettle }: { onHoverChange?: (hovered: bool
   );
 }
 
-// ─── Circle Wipe Transition ───────────────────────────────────────────────────
-// Multiple opaque circles burst from the same origin in sequence.
-// Each new circle overtakes the previous one — ripple/iris burst effect.
-const WIPE_COLORS = [WIPE_ACCENT3, WIPE_ACCENT2, WIPE_ACCENT1, WIPE_ACCENT4];
-// Each circle's burst duration (ms)
-const WIPE_BURST_DURATION = 320;
-// How many ms after the previous circle starts before the next one launches
-const WIPE_STAGGER = 180;
-// How long to hold full coverage before navigating (ms)
-// How long the final reveal takes (ms)
-
-interface CircleWipeProps {
-  origin: { x: number; y: number };
-  onCovered: () => void;
-  onDone: () => void;
-}
-
-function CircleWipe({ origin, onCovered, onDone }: CircleWipeProps) {
-  // Each circle gets its own radius state driven by a single rAF loop
-  const [radii, setRadii] = useState<number[]>(WIPE_COLORS.map(() => 0));
-  const [revealRadius, setRevealRadius] = useState<number | null>(null); // null = not yet revealing
-  const coveredFired = useRef(false);
-  const startTime = useRef<number | null>(null);
-
-  const maxR = Math.ceil(Math.sqrt(
-    Math.max(origin.x, window.innerWidth  - origin.x) ** 2 +
-    Math.max(origin.y, window.innerHeight - origin.y) ** 2
-  ));
-
-  useEffect(() => {
-    let raf: number;
-
-    const tick = (ts: number) => {
-      if (!startTime.current) startTime.current = ts;
-      const elapsed = ts - startTime.current;
-
-      // ── Burst phase ──────────────────────────────────────────────────────
-      const newRadii = WIPE_COLORS.map((_, i) => {
-        const circleStart = i * WIPE_STAGGER;
-        const t = Math.max(0, Math.min(1, (elapsed - circleStart) / WIPE_BURST_DURATION));
-        // easeInOut cubic
-        const eased = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
-        return eased * maxR;
-      });
-      setRadii(newRadii);
-
-      // Last circle fully covers screen
-      const lastStart = (WIPE_COLORS.length - 1) * WIPE_STAGGER;
-      const lastT = Math.max(0, Math.min(1, (elapsed - lastStart) / WIPE_BURST_DURATION));
-
-      if (lastT >= 1 && !coveredFired.current) {
-        coveredFired.current = true;
-        onCovered();
-
-        // After hold, start reveal
-        const holdStart = ts;
-        const reveal = (ts2: number) => {
-          const re = ts2 - holdStart;
-          if (re < WIPE_HOLD_DURATION) {
-            raf = requestAnimationFrame(reveal);
-            return;
-          }
-          // easeOut cubic shrink of final circle
-          const rt = Math.min(1, (re - WIPE_HOLD_DURATION) / WIPE_REVEAL_DURATION);
-          const reased = 1 - (1 - rt) ** 3;
-          setRevealRadius((1 - reased) * maxR);
-          if (rt < 1) {
-            raf = requestAnimationFrame(reveal);
-          } else {
-            onDone();
-          }
-        };
-        raf = requestAnimationFrame(reveal);
-        return; // stop burst loop
-      }
-
-      if (lastT < 1) raf = requestAnimationFrame(tick);
-    };
-
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  return (
-    <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden">
-      {WIPE_COLORS.map((color, i) => {
-        // During reveal, only the last circle shrinks; others stay full
-        const isLast = i === WIPE_COLORS.length - 1;
-        const r = revealRadius !== null
-          ? (isLast ? revealRadius : maxR)
-          : radii[i];
-        return (
-          <div
-            key={i}
-            className="absolute inset-0"
-            style={{
-              backgroundColor: color,
-              clipPath: `circle(${r}px at ${origin.x}px ${origin.y}px)`,
-              willChange: 'clip-path',
-            }}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
 // Doodle frames cycle: 1 → 2 → 3 → 2 → repeat (hand-drawn wiggle effect)
 const DOODLE_FRAMES = ['/hero/1.png', '/hero/2.png', '/hero/3.png', '/hero/2.png'];
 const DOODLE_FPS = 500; // ms per frame
@@ -934,6 +818,135 @@ function DoodleInteract() {
   );
 }
 
+// ── FloatingDots ──────────────────────────────────────────────────────────────
+const DOT_COLORS = ['#ffffff', '#f72585', '#b5ff4d', '#ffe566', '#a855f7'];
+
+interface Dot {
+  x: number; y: number;
+  ox: number; oy: number; // home/origin position
+  angle: number;          // current orbit angle (radians)
+  orbitR: number;         // orbit radius around home
+  orbitSpeed: number;     // radians per frame
+  size: number;
+  color: string;
+  vx: number; vy: number;
+  opacity: number;
+}
+
+function FloatingDots() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mouse = useRef({ x: -9999, y: -9999 });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const resize = () => {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const onMouseMove = (e: MouseEvent) => {
+      mouse.current = { x: e.clientX, y: e.clientY };
+    };
+    const onMouseLeave = () => {
+      mouse.current = { x: -9999, y: -9999 };
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseleave', onMouseLeave);
+
+    // Spawn dots
+    const COUNT = 55;
+    const REPEL_RADIUS = 90;
+    const REPEL_STRENGTH = 0.55;
+    const RETURN_SPRING = 0.04;
+    const DAMPING = 0.80;
+
+    const dots: Dot[] = Array.from({ length: COUNT }, () => {
+      const ox = Math.random() * window.innerWidth;
+      const oy = Math.random() * window.innerHeight;
+      const angle = Math.random() * Math.PI * 2;
+      const orbitR = Math.random() * 18 + 4;           // orbit 4–22px around home
+      const orbitSpeed = (Math.random() * 0.004 + 0.001) * (Math.random() < 0.5 ? 1 : -1); // CW or CCW
+      return {
+        x: ox + Math.cos(angle) * orbitR,
+        y: oy + Math.sin(angle) * orbitR,
+        ox, oy,
+        angle, orbitR, orbitSpeed,
+        size:    Math.random() * 2.5 + 1,
+        color:   DOT_COLORS[Math.floor(Math.random() * DOT_COLORS.length)],
+        vx: 0, vy: 0,
+        opacity: Math.random() * 0.45 + 0.1,
+      };
+    });
+
+    let raf: number;
+    const tick = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const mx = mouse.current.x;
+      const my = mouse.current.y;
+
+      for (const d of dots) {
+        // Advance orbit angle
+        d.angle += d.orbitSpeed;
+
+        // Orbit target — the idle "resting" spot is this orbital position
+        const targetX = d.ox + Math.cos(d.angle) * d.orbitR;
+        const targetY = d.oy + Math.sin(d.angle) * d.orbitR;
+
+        // Repulsion from cursor
+        const dx = d.x - mx;
+        const dy = d.y - my;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < REPEL_RADIUS && dist > 0) {
+          const force = (REPEL_RADIUS - dist) / REPEL_RADIUS;
+          d.vx += (dx / dist) * force * REPEL_STRENGTH;
+          d.vy += (dy / dist) * force * REPEL_STRENGTH;
+        }
+
+        // Spring back toward orbit target (not static home)
+        d.vx += (targetX - d.x) * RETURN_SPRING;
+        d.vy += (targetY - d.y) * RETURN_SPRING;
+
+        // Dampen
+        d.vx *= DAMPING;
+        d.vy *= DAMPING;
+
+        d.x += d.vx;
+        d.y += d.vy;
+
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+        ctx.fillStyle = d.color;
+        ctx.globalAlpha = d.opacity;
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseleave', onMouseLeave);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 pointer-events-none"
+      style={{ zIndex: 1 }}
+    />
+  );
+}
+
 export default function HeroFace() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -963,6 +976,9 @@ export default function HeroFace() {
 
   return (
     <div className="relative w-full h-screen" style={{ background: '#0e0e0e' }}>
+      {/* Floating ambient dots */}
+      <FloatingDots />
+
       {/* Loading fallback - static image */}
       {!isLoaded && (
         <div className="absolute inset-0 flex items-center justify-center">

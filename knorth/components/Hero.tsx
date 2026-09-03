@@ -1,7 +1,9 @@
 "use client";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring } from "framer-motion";
 import { Instagram, Linkedin, Github, Twitter, Figma, Facebook } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { usePageTransition } from "@/components/PageTransition";
 import TiltedCard from "@/components/designs/TiltedCard";
 import CircularGallery from "@/components/designs/CircularGallery";
 import Contact from "@/components/Contact";
@@ -96,6 +98,7 @@ const VOLUNTEERS = [
 
 // ── ExperienceList ────────────────────────────────────────────────────────────
 function ExperienceList() {
+  const { navigate } = usePageTransition();
   const visible = JOBS.slice(0, 1);
 
   return (
@@ -136,10 +139,11 @@ function ExperienceList() {
         })}
 
         <div className="relative mt-0">
-          <a href="/experience"
+          <button
+            onClick={(e) => navigate("/experience", e.clientX, e.clientY)}
             className="relative z-20 pl-8 text-sm text-foreground/40 hover:text-foreground/80 transition-colors tracking-[0.2em]">
             see more
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -148,6 +152,7 @@ function ExperienceList() {
 
 // ── AffiliationList ───────────────────────────────────────────────────────────
 function AffiliationList() {
+  const { navigate } = usePageTransition();
   return (
     <div className="mt-7">
       <p className="text-xs uppercase tracking-[0.3em] text-foreground/40 mb-6">Leadership &amp; Affiliations</p>
@@ -175,10 +180,11 @@ function AffiliationList() {
         </div>
 
         <div className="relative mt-4 pl-8">
-          <a href="/experience"
+          <button
+            onClick={(e) => navigate("/experience", e.clientX, e.clientY)}
             className="relative z-20 text-sm text-foreground/40 hover:text-foreground/80 transition-colors tracking-[0.2em]">
             see more
-          </a>
+          </button>
         </div>
       </div>
     </div>
@@ -291,6 +297,92 @@ function CertOrbit() {
   );
 }
 
+// ── ScatteredStickers ─────────────────────────────────────────────────────────
+function GalleryWithCursor() {
+  const [hovered, setHovered] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { navigate } = usePageTransition();
+  const mouseDownPos = useRef({ x: 0, y: 0 });
+
+  // Motion values for pill — same pattern as TiltedCard
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const opacity = useSpring(0, { stiffness: 300, damping: 30 });
+  const rotate = useSpring(0, { stiffness: 350, damping: 30, mass: 1 });
+  const lastY = useRef(0);
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const localX = e.clientX - rect.left;
+    const localY = e.clientY - rect.top;
+    x.set(localX + 12);
+    y.set(localY + 8);
+
+    const velocityY = localY - lastY.current;
+    rotate.set(-velocityY * 0.6);
+    lastY.current = localY;
+  };
+
+  const handleMouseEnter = () => {
+    setHovered(true);
+    opacity.set(1);
+  };
+
+  const handleMouseLeave = () => {
+    setHovered(false);
+    opacity.set(0);
+    rotate.set(0);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    mouseDownPos.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    const dx = e.clientX - mouseDownPos.current.x;
+    const dy = e.clientY - mouseDownPos.current.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 5) {
+      navigate("/experience", e.clientX, e.clientY);
+    }
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      style={{ height: "600px", width: "100%", position: "relative", marginTop: "-80px", cursor: "none" }}
+    >
+      <CircularGallery bend={1} textColor="#ffffff" borderRadius={0.05} scrollEase={0.05} font="bold 30px Figtree" scrollSpeed={2} />
+
+      {/* Pill cursor — mirrors TiltedCard figcaption behavior */}
+      <motion.div
+        style={{
+          x,
+          y,
+          opacity,
+          rotate,
+          position: "absolute",
+          top: 0,
+          left: 0,
+          pointerEvents: "none",
+          zIndex: 50,
+        }}
+        className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center justify-center shadow-xl border border-black/5"
+      >
+        <span className="text-[#2d2d2d] font-bold text-xs whitespace-nowrap">
+          Inspect the build
+        </span>
+      </motion.div>
+    </div>
+  );
+}
+
 // ── Hero ──────────────────────────────────────────────────────────────────────
 export default function Hero() {
   const socialIcons = [
@@ -309,7 +401,10 @@ export default function Hero() {
     <div className="flex flex-col w-full">
 
       {/* HOME */}
-      <section className="flex flex-col items-center justify-start pt-4 min-h-screen px-6 max-w-6xl mx-auto w-full">
+      <section className="relative flex flex-col items-center justify-start pt-4 min-h-screen px-6 max-w-6xl mx-auto w-full">
+        <img src="/stickers/1.png" aria-hidden="true" className="pointer-events-none select-none absolute w-36 h-36 object-contain" style={{ rotate: "-15deg", zIndex: 0, top: "8%",    left: "-2%" }} />
+        <img src="/stickers/2.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "12deg",  zIndex: 0, top: "5%",    right: "5%" }} />
+        <img src="/stickers/3.png" aria-hidden="true" className="pointer-events-none select-none absolute w-28 h-28 object-contain" style={{ rotate: "20deg",  zIndex: 0, bottom: "12%", left: "30%" }} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center w-full">
           
           {/* LEFT SIDE - GIF */}
@@ -374,7 +469,11 @@ export default function Hero() {
       </section>
 
       {/* ABOUT */}
-      <section id="about" className="flex flex-col items-center justify-center min-h-screen px-6 max-w-6xl mx-auto w-full">
+      <section id="about" className="relative flex flex-col items-center justify-center min-h-screen px-6 max-w-6xl mx-auto w-full">
+        <img src="/stickers/7.png" aria-hidden="true" className="pointer-events-none select-none absolute w-28 h-28 object-contain" style={{ rotate: "-10deg", zIndex: 0, top: "6%",    left: "2%" }} />
+        <img src="/stickers/4.png" aria-hidden="true" className="pointer-events-none select-none absolute w-36 h-36 object-contain" style={{ zIndex: 0, top: "35%", right: "-6%", transform: "translateY(-50%) rotate(10deg)" }} />
+        <img src="/stickers/5.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "-18deg", zIndex: 0, top: "50%", left: "-8%", transform: "translateY(-50%) rotate(-18deg)" }} />
+        <img src="/stickers/6.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "22deg",  zIndex: 0, bottom: "6%", left: "47%" }} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center w-full">
 
           <div className="flex flex-col justify-center text-left w-full order-2 md:order-1">
@@ -429,28 +528,31 @@ export default function Hero() {
       </section>
 
       {/* PROJECTS */}
-      <section id="projects" className="min-h-screen flex flex-col items-center justify-center py-16">
+      <section id="projects" className="relative min-h-screen flex flex-col items-center justify-center py-16">
+        <img src="/stickers/7.png" aria-hidden="true" className="pointer-events-none select-none absolute w-36 h-36 object-contain" style={{ rotate: "-12deg", zIndex: 0, top: "8%",    left: "5%" }} />
+        <img src="/stickers/1.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "18deg",  zIndex: 0, top: "15%",   right: "8%" }} />
+        <img src="/stickers/4.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "8deg",   zIndex: 0, bottom: "10%", left: "45%" }} />
         <div className="text-center mb-0 px-6">
-          <p className="text-xs uppercase tracking-[0.3em] text-foreground/40 mb-3">Selected Work</p>
           <h2 className="text-4xl md:text-6xl font-bold">
-            My <span style={{ color: ACCENT }}>Projects</span>
+            Things that <span style={{ color: ACCENT }}>run</span>
           </h2>
-          <p className="text-foreground/50 text-sm mt-4 max-w-md mx-auto">
-            A collection of things I&apos;ve built, designed, and shipped.
+          <p className="text-foreground/50 text-sm mt-4 max-w-lg mx-auto">
+            10% inspiration, 90% fixing weird margin bugs. A curated showcase of things I&apos;ve designed, built, and actually shipped.
           </p>
         </div>
-        <div style={{ height: "600px", width: "100%", position: "relative", marginTop: "-80px" }}>
-          <CircularGallery bend={1} textColor="#ffffff" borderRadius={0.05} scrollEase={0.05} font="bold 30px Figtree" scrollSpeed={2} />
-        </div>
+        <GalleryWithCursor />
       </section>
 
       {/* EXPERIENCE */}
-      <section id="experience" className="min-h-screen flex flex-col justify-center py-24 px-6 max-w-6xl mx-auto w-full">
+      <section id="experience" className="relative min-h-screen flex flex-col justify-center py-24 px-6 max-w-6xl mx-auto w-full">
+        <img src="/stickers/2.png" aria-hidden="true" className="pointer-events-none select-none absolute w-36 h-36 object-contain" style={{ zIndex: 0, top: "42%", right: "8%", transform: "translateY(-50%) rotate(-8deg)" }} />
+        <img src="/stickers/5.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "14deg",  zIndex: 0, top: "3%",    left: "55%" }} />
+        <img src="/stickers/6.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ zIndex: 0, top: "50%", left: "-10%", transform: "translateY(-50%) rotate(-18deg)" }} />
 
         {/* big heading — full width */}
         <div className="mb-6">
           <h2 className="text-4xl md:text-6xl font-bold">
-            Work <span style={{ color: ACCENT3 }}>Experience</span>
+            sudo make <span style={{ color: ACCENT3 }}>career</span>
           </h2>
         </div>
 
