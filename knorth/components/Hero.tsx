@@ -660,7 +660,7 @@ export default function Hero() {
 
           <div className="relative flex justify-center md:justify-end items-center w-full order-1 md:order-2">
             <TiltedCard
-              imageSrc="/profile.jpg" altText="Tiffany Lyssa" captionText="Tiffany Lyssa"
+              imageSrc="/jennie.jpg" altText="Tiffany Lyssa" captionText="Tiffany Lyssa"
               containerHeight="600px" containerWidth="100%" imageHeight="500px" imageWidth="400px"
               rotateAmplitude={10} scaleOnHover={1.05} showTooltip={true} displayOverlayContent={true}
               overlayContent={
