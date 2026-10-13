@@ -37,6 +37,30 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Career page — shared hover for skill chips and certification cards.
+   Set --accent-tint inline to the item's accent color. */
+.career-hover {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition:
+    transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .career-hover:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent-tint) 60%, transparent);
+    background-color: var(--color-surface2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .career-hover:hover {
+    transform: none;
+  }
+}
+
 @layer base {
   body {
     @apply bg-background text-foreground;
