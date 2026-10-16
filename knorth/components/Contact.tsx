@@ -1,6 +1,9 @@
 "use client";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowUpRight, Check } from "lucide-react";
+import { ArrowUpRight, Check, Github, Linkedin, Mail } from "lucide-react";
+
+// Placeholder: replace with the address the email button should open
+const CONTACT_EMAIL = "hello@example.com";
 import { useState, useRef, useEffect } from "react";
 
 const ACCENT = "#f72585";
@@ -253,24 +256,17 @@ export default function Contact() {
     }, 10000);
   };
 
-  const features = [
-    "I reply faster than your group chat",
-    "Zero unsolicited advice guaranteed",
-    "Yes, half-baked ideas totally count",
-  ];
-
-  const socialIcons = [
-    { icon: "𝕏", link: "https://x.com/kno_orth", label: "X/Twitter" },
-    { icon: "f", link: "https://www.facebook.com/lystffny/", label: "Facebook" },
-    { icon: "in", link: "https://www.instagram.com/", label: "Instagram" },
+  const socialLinks = [
+    { Icon: Mail, label: "Email", handle: CONTACT_EMAIL, link: `mailto:${CONTACT_EMAIL}`, color: ACCENT3 },
+    { Icon: Linkedin, label: "LinkedIn", handle: "tiffany-lyssa", link: "https://www.linkedin.com/in/tiffany-lyssa-4b210b281/", color: ACCENT },
+    { Icon: Github, label: "GitHub", handle: "knorthy", link: "https://github.com/knorthy", color: ACCENT2 },
   ];
 
   return (
     <section
       ref={sectionRef}
       id="contact"
-      className="flex flex-col justify-center py-16 px-6 relative overflow-visible"
-      style={{ minHeight: "100svh" }}
+      className="flex flex-col justify-center pt-16 pb-8 px-6 relative overflow-visible"
     >
       {/* Galaxy dots */}
       <ContactDots />
@@ -333,48 +329,36 @@ export default function Contact() {
               </p>
             </div>
 
-            {/* Feature list */}
-            <div className="space-y-3 mb-8">
-              {features.map((feature, idx) => (
-                <motion.div
-                  key={idx}
+            {/* Where else to find me */}
+            <ul className="flex flex-col gap-2">
+              {socialLinks.map(({ Icon, label, handle, link, color }, idx) => (
+                <motion.li
+                  key={label}
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: idx * 0.1, duration: 0.4 }}
-                  className="flex items-center gap-3"
+                  transition={{ delay: idx * 0.08, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
                 >
-                  <div
-                    className="w-5 h-5 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: `${ACCENT2}30` }}
+                  <a
+                    href={link}
+                    target={link.startsWith("mailto:") ? undefined : "_blank"}
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center gap-3 py-1"
                   >
-                    <Check size={12} style={{ color: ACCENT2 }} />
-                  </div>
-                  <span className="text-foreground/70 text-sm">{feature}</span>
-                </motion.div>
+                    <Icon
+                      size={18}
+                      aria-hidden
+                      className="shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:-rotate-6"
+                      style={{ color }}
+                    />
+                    <span className="text-sm font-semibold text-foreground transition-colors group-hover:text-[var(--hover-tint)]" style={{ "--hover-tint": color } as React.CSSProperties}>
+                      {label}
+                    </span>
+                    <span className="text-sm text-foreground/50 truncate">{handle}</span>
+                  </a>
+                </motion.li>
               ))}
-            </div>
-
-            {/* Social icons */}
-            <div className="flex gap-4">
-              {socialIcons.map((social, idx) => (
-                <motion.a
-                  key={idx}
-                  href={social.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  whileHover={{ y: -3 }}
-                  className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold transition-all"
-                  style={{
-                    backgroundColor: "#1a1a1a",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                  }}
-                  aria-label={social.label}
-                >
-                  {social.icon}
-                </motion.a>
-              ))}
-            </div>
+            </ul>
           </motion.div>
 
           {/* RIGHT SIDE - Form */}

@@ -33,7 +33,7 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -61,6 +61,100 @@ body {
   }
 }
 
+/* Browser surfaces in the palette */
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 70%, transparent);
+  color: #fff;
+}
+html {
+  caret-color: var(--color-accent);
+}
+@layer base {
+  /* in base so components can opt out with focus:outline-none */
+  :focus-visible {
+    outline: 2px solid var(--color-accent3);
+    outline-offset: 3px;
+  }
+}
+
+/* ── Tech stack keyboard ─────────────────────────────────────────────────── */
+.keyboard {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+/* A keycap: a dark well (the skirt) with a lighter top face that sinks on press */
+.keycap {
+  --key-tint: #f0f0f0;
+  display: inline-flex;
+  padding: 0 0 6px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #151515, #0a0a0a);
+  box-shadow:
+    0 10px 18px -6px rgba(0, 0, 0, 0.7),
+    inset 0 -1px 0 color-mix(in srgb, var(--key-tint) 25%, transparent);
+  transition: padding 120ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.keycap-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  height: 3.5rem;
+  padding: 0 1.15rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  color: rgba(240, 240, 240, 0.88);
+  background: linear-gradient(180deg, #2a2a2a 0%, #1f1f1f 100%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition:
+    transform 120ms cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+.keycap-mod .keycap-top {
+  min-width: 13rem;
+  color: #0e0e0e;
+  background: var(--key-tint);
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -10px 18px rgba(0, 0, 0, 0.12);
+}
+@media (hover: hover) and (pointer: fine) {
+  .keycap:hover .keycap-top {
+    transform: translateY(4px);
+    border-color: color-mix(in srgb, var(--key-tint) 70%, transparent);
+  }
+  .keycap:hover {
+    box-shadow:
+      0 4px 10px -4px rgba(0, 0, 0, 0.7),
+      0 0 0 1px color-mix(in srgb, var(--key-tint) 25%, transparent);
+  }
+}
+.keycap:active .keycap-top {
+  transform: translateY(5px);
+}
+
+/* ── Side quest lanyards ─────────────────────────────────────────────────── */
+.badge-hole {
+  width: 2.75rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: #0e0e0e;
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Certificate paper ───────────────────────────────────────────────────── */
+.cert-paper {
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(255, 255, 255, 0.5), transparent 60%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.025) 0 1px, transparent 1px 4px),
+    #f3eee4;
+  color: #1b1b1b;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 22px 40px -12px rgba(0, 0, 0, 0.75);
+}
+
 @layer base {
   body {
     @apply bg-background text-foreground;
@@ -76,5 +170,76 @@ body {
   html::-webkit-scrollbar,
   body::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
+  }
+}
+
+/* ── Services picker wheel ───────────────────────────────────────────────── */
+.wheel-mask-y {
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
+}
+.wheel-mask-x {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent);
+}
+
+/* ── Contact links ───────────────────────────────────────────────────────── */
+.contact-link {
+  --link-tint: #f0f0f0;
+  background: rgba(26, 26, 26, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition:
+    transform 180ms cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .contact-link:hover {
+    transform: translateX(4px);
+    border-color: color-mix(in srgb, var(--link-tint) 55%, transparent);
+    background: rgba(34, 34, 34, 0.7);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .contact-link:hover {
+    transform: none;
+  }
+}
+
+/* ── Pixel wordmark ──────────────────────────────────────────────────────── */
+.pixel-logo .px-cell {
+  fill: #f72585;
+  transform-box: fill-box;
+  transition: fill 200ms ease;
+}
+.pixel-logo .px-shadow {
+  fill: #6d0f3b;
+  transform-box: fill-box;
+}
+a:hover .pixel-logo .px-cell,
+a:focus-visible .pixel-logo .px-cell {
+  fill: #ff5ca8;
+  animation: px-wave 560ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+a:hover .pixel-logo .px-shadow,
+a:focus-visible .pixel-logo .px-shadow {
+  animation: px-wave-shadow 560ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+@keyframes px-wave {
+  0% { transform: translateY(0); }
+  35% { transform: translateY(-1.5px); }
+  70% { transform: translateY(0.3px); }
+  100% { transform: translateY(0); }
+}
+@keyframes px-wave-shadow {
+  0% { transform: translateY(0); opacity: 1; }
+  35% { transform: translateY(0.6px); opacity: 0.6; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a:hover .pixel-logo .px-cell,
+  a:hover .pixel-logo .px-shadow {
+    animation: none;
   }
 }

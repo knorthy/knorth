@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import TiltedCard from "@/components/designs/TiltedCard";
 import CircularGallery from "@/components/designs/CircularGallery";
 import Contact from "@/components/Contact";
+import ServicesWheel from "@/components/career/ServicesWheel";
 import SkillsSection from "@/components/career/SkillsSection";
 import ExperienceTimeline from "@/components/career/ExperienceTimeline";
 import CertificationsGrid from "@/components/career/CertificationsGrid";
@@ -258,7 +259,7 @@ export default function Hero() {
   const createSkills  = ["Figma", "Canva", "Capcut", "Adobe Premiere Pro", "Adobe Illustrator"];
 
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex flex-col w-full overflow-x-clip">
 
       {/* HOME */}
       <section className="relative flex flex-col items-center justify-start pt-4 min-h-screen px-6 max-w-6xl mx-auto w-full">
@@ -430,23 +431,17 @@ export default function Hero() {
       </section>
 
       {/* EXPERIENCE */}
-      <section id="experience" className="relative py-24 px-6 max-w-6xl mx-auto w-full">
+      <section id="experience" className="relative pt-0 pb-24 px-6 max-w-6xl mx-auto w-full">
         {/* Blobs */}
-        <div className="absolute pointer-events-none" style={{ top: "-20%", left: "-20%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(251,113,33,0.10) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
-        <div className="absolute pointer-events-none" style={{ bottom: "-10%", right: "-10%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
-        <img src="/stickers/2.png" aria-hidden="true" className="pointer-events-none select-none absolute w-36 h-36 object-contain" style={{ zIndex: 0, top: 40, right: "8%", rotate: "-8deg" }} />
-        <img src="/stickers/5.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "14deg",  zIndex: 0, top: "3%",    left: "55%" }} />
-        <img src="/stickers/6.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ zIndex: 0, top: 180, left: "-10%", rotate: "-18deg" }} />
+        <div className="absolute pointer-events-none" style={{ top: -160, left: "-20%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(251,113,33,0.10) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
+        <div className="absolute pointer-events-none" style={{ bottom: 0, right: "-10%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
+        <img src="/stickers/2.png" aria-hidden="true" className="hidden md:block pointer-events-none select-none absolute w-36 h-36 object-contain" style={{ zIndex: 0, top: 40, right: "8%", rotate: "-8deg" }} />
+        <img src="/stickers/5.png" aria-hidden="true" className="hidden md:block pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "14deg",  zIndex: 0, top: "3%",    left: "55%" }} />
+        <img src="/stickers/6.png" aria-hidden="true" className="hidden md:block pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ zIndex: 0, top: 180, left: "-10%", rotate: "-18deg" }} />
 
         <div className="relative">
-          <h2 className="text-4xl md:text-6xl font-bold">
-            sudo make <span style={{ color: ACCENT3 }}>career</span>
-          </h2>
-          <p className="text-foreground/60 mt-4 max-w-lg text-sm leading-relaxed">
-            The stack I build with, where I&apos;ve put it to work, and the paper trail.
-          </p>
-
-          {/* Content lives in data/career.ts */}
+          {/* Content lives in data/services.ts and data/career.ts */}
+          <ServicesWheel />
           <SkillsSection />
           <ExperienceTimeline />
           <CertificationsGrid />
