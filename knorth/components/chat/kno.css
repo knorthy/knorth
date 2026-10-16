@@ -1,0 +1,360 @@
+/* Kniah the chat cat + chat panel styles (imported by KnoCat.tsx) */
+/* ── Kno, the chat cat ───────────────────────────────────────────────────── */
+/* Pivots in the cat's 32x19 viewBox: centre of the head, and the spot it sits on */
+.kno .kno-mover {
+  transform-box: view-box;
+  transform-origin: 17px 12px;
+  transition: transform 380ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.kno .kno-body {
+  transform-box: view-box;
+  transform-origin: 17px 20px;
+}
+.kno .kno-tail {
+  transform-box: view-box;
+  transform-origin: 8px 13.5px;
+  animation: kno-tail 1.7s ease-in-out infinite alternate;
+}
+.kno .kno-ears {
+  transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.kno .kno-eyes {
+  transition: transform 140ms ease-out;
+}
+.kno .kno-look {
+  transition: transform 320ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.kno .kno-lids {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 70ms ease-in;
+}
+.kno .kno-lids.kno-blink {
+  transform: scaleY(0.15);
+}
+.kno .kno-sparkle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: kno-twinkle 2.4s ease-in-out infinite;
+}
+.kno-perk .kno .kno-ears {
+  transform: translateY(-0.7px);
+}
+
+/* idle: gentle bob */
+.kno[data-mood="idle"] .kno-body {
+  animation: kno-bob 2.6s ease-in-out infinite;
+}
+
+/* hover: crouch, jump, backflip, land with a squash */
+.kno[data-mood="flip"] .kno-mover {
+  animation: kno-flip 820ms cubic-bezier(0.33, 0.8, 0.4, 1) both;
+}
+
+/* sing: sway side to side while notes float off */
+.kno[data-mood="sing"] .kno-body {
+  animation: kno-sway 1.1s ease-in-out infinite alternate;
+}
+.kno .kno-note {
+  animation: kno-note 1.8s ease-out infinite;
+  opacity: 0;
+}
+.kno .kno-note-2 {
+  animation-delay: 0.9s;
+}
+
+/* spin: turn around in place twice, sprite style */
+.kno[data-mood="spin"] .kno-mover {
+  animation: kno-spin 1.3s cubic-bezier(0.45, 0, 0.55, 1) both;
+}
+
+/* sleep: slow breathing, droopy ears, lazy tail, rising z's */
+.kno[data-mood="sleep"] .kno-body {
+  animation: kno-breathe 3.2s ease-in-out infinite;
+}
+.kno[data-mood="sleep"] .kno-ears {
+  transform: translateY(0.6px);
+}
+.kno[data-mood="sleep"] .kno-tail {
+  animation-duration: 4s;
+}
+.kno[data-mood="sleep"] .kno-decor {
+  opacity: 0.35;
+  transition: opacity 600ms ease;
+}
+.kno .kno-z {
+  animation: kno-z 2.6s ease-out infinite;
+  opacity: 0;
+}
+.kno .kno-z-2 {
+  animation-delay: 1.3s;
+}
+.kno .kno-z-small {
+  transform-box: fill-box;
+  transform-origin: center;
+  scale: 0.7;
+}
+/* the top-right sparkle and ring make room for notes, z's and thought dots */
+.kno .kno-decor-tr {
+  transition: opacity 240ms ease;
+}
+.kno[data-mood="sing"] .kno-decor-tr,
+.kno[data-mood="sleep"] .kno-decor-tr,
+.kno[data-mood="think"] .kno-decor-tr {
+  opacity: 0;
+}
+
+/* think: glance up and to the side, slight head tilt, pulsing dots */
+.kno[data-mood="think"] .kno-look {
+  transform: translate(0.7px, -0.7px);
+}
+.kno[data-mood="think"] .kno-body {
+  animation: kno-tilt 2.4s ease-in-out infinite alternate;
+}
+.kno[data-mood="think"] .kno-tail {
+  animation-duration: 0.7s;
+}
+.kno .kno-think-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: kno-dot-pulse 1.2s ease-in-out infinite;
+}
+.kno .kno-think-dot-2 {
+  animation-delay: 0.2s;
+}
+.kno .kno-think-dot-3 {
+  animation-delay: 0.4s;
+}
+
+/* sit: settle down onto little paws, tail swishes slowly */
+.kno[data-mood="sit"] .kno-mover {
+  transform: translateY(1px) scale(1.03, 0.94);
+}
+.kno[data-mood="sit"] .kno-tail {
+  animation-duration: 2.8s;
+}
+.kno .kno-paws {
+  animation: kno-paws-in 320ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@keyframes kno-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-0.8px); }
+}
+@keyframes kno-tail {
+  from { transform: rotate(-7deg); }
+  to { transform: rotate(6deg); }
+}
+@keyframes kno-twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.6); }
+  45% { opacity: 1; transform: scale(1); }
+}
+@keyframes kno-flip {
+  0% { transform: translateY(0) rotate(0) scale(1, 1); }
+  14% { transform: translateY(1px) rotate(0) scale(1.08, 0.86); }
+  30% { transform: translateY(-5px) rotate(-60deg) scale(0.96, 1.06); }
+  52% { transform: translateY(-8px) rotate(-200deg) scale(1, 1); }
+  76% { transform: translateY(-1px) rotate(-345deg) scale(1, 1); }
+  86% { transform: translateY(1px) rotate(-360deg) scale(1.1, 0.88); }
+  100% { transform: translateY(0) rotate(-360deg) scale(1, 1); }
+}
+@keyframes kno-sway {
+  from { transform: rotate(-5deg); }
+  to { transform: rotate(5deg); }
+}
+@keyframes kno-note {
+  0% { opacity: 0; transform: translate(0, 0); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(3px, -7px); }
+}
+@keyframes kno-spin {
+  0% { transform: translateY(0) scaleX(1); }
+  25% { transform: translateY(-1.5px) scaleX(-1); }
+  50% { transform: translateY(0) scaleX(1); }
+  75% { transform: translateY(-1.5px) scaleX(-1); }
+  100% { transform: translateY(0) scaleX(1); }
+}
+@keyframes kno-breathe {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.02, 0.95); }
+}
+@keyframes kno-z {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.7); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translate(2px, -6px) scale(1); }
+}
+@keyframes kno-tilt {
+  from { transform: rotate(-2deg); }
+  to { transform: rotate(4deg); }
+}
+@keyframes kno-dot-pulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+@keyframes kno-paws-in {
+  from { transform: translateY(-1.5px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.kno-launcher {
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.55));
+}
+.kno-launcher:focus-visible {
+  outline: 2px solid #ffb3d6;
+  outline-offset: 2px;
+}
+
+/* chat bubbles */
+.kno-msg {
+  max-width: 85%;
+  width: fit-content;
+  padding: 0.6rem 0.85rem;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.kno-msg-bot {
+  background: #1f1f1f;
+  color: rgba(240, 240, 240, 0.9);
+  border-bottom-left-radius: 0.3rem;
+}
+.kno-msg-user {
+  margin-left: auto;
+  background: #ff7eb9;
+  color: #3d0a24;
+  font-weight: 500;
+  border-bottom-right-radius: 0.3rem;
+}
+.kno-msg-error {
+  background: color-mix(in srgb, #f72585 14%, #1f1f1f);
+}
+.kno-dot {
+  animation: kno-dot 0.9s ease-in-out infinite;
+}
+@keyframes kno-dot {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-4px); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kno .kno-body,
+  .kno .kno-mover,
+  .kno .kno-tail,
+  .kno .kno-sparkle,
+  .kno .kno-note,
+  .kno .kno-z,
+  .kno .kno-think-dot,
+  .kno .kno-paws,
+  .kno-dot {
+    animation: none;
+  }
+  .kno .kno-sparkle {
+    opacity: 0.8;
+  }
+}
+
+/* ── Ears: each one moves on its own ─────────────────────────────────────── */
+.kno .kno-ear {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  transition: transform 260ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+/* idle: an occasional twitch, out of step between the two ears */
+.kno .kno-ear-l {
+  animation: kno-twitch-l 4.7s ease-in-out infinite;
+}
+.kno .kno-ear-r {
+  animation: kno-twitch-r 6.3s ease-in-out 1.1s infinite;
+}
+/* sing: ears bop to the beat */
+.kno[data-mood="sing"] .kno-ear-l {
+  animation: kno-ear-bop 0.55s ease-in-out infinite alternate;
+}
+.kno[data-mood="sing"] .kno-ear-r {
+  animation: kno-ear-bop 0.55s ease-in-out 0.275s infinite alternate;
+}
+/* sleep: ears droop outward */
+.kno[data-mood="sleep"] .kno-ear {
+  animation: none;
+}
+.kno[data-mood="sleep"] .kno-ear-l {
+  transform: rotate(-13deg) translateY(0.5px);
+}
+.kno[data-mood="sleep"] .kno-ear-r {
+  transform: rotate(13deg) translateY(0.5px);
+}
+/* think: one ear swivels like it's listening */
+.kno[data-mood="think"] .kno-ear-r {
+  animation: kno-ear-listen 1.6s ease-in-out infinite alternate;
+}
+/* dizzy: ears pinned flat */
+.kno[data-mood="dizzy"] .kno-ear {
+  animation: none;
+}
+.kno[data-mood="dizzy"] .kno-ear-l {
+  transform: rotate(-18deg) translateY(0.4px);
+}
+.kno[data-mood="dizzy"] .kno-ear-r {
+  transform: rotate(18deg) translateY(0.4px);
+}
+/* hover: both ears perk straight up */
+.kno-perk .kno .kno-ear {
+  animation: none;
+  transform: translateY(-0.7px);
+}
+
+@keyframes kno-twitch-l {
+  0%, 84%, 100% { transform: rotate(0); }
+  87% { transform: rotate(-9deg); }
+  90% { transform: rotate(3deg); }
+  93% { transform: rotate(-5deg); }
+  96% { transform: rotate(0); }
+}
+@keyframes kno-twitch-r {
+  0%, 78%, 100% { transform: rotate(0); }
+  81% { transform: rotate(9deg); }
+  85% { transform: rotate(-3deg); }
+  89% { transform: rotate(0); }
+}
+@keyframes kno-ear-bop {
+  from { transform: rotate(-6deg) translateY(0); }
+  to { transform: rotate(6deg) translateY(-0.4px); }
+}
+@keyframes kno-ear-listen {
+  from { transform: rotate(0); }
+  to { transform: rotate(14deg); }
+}
+
+/* ── Dizzy: spins non-stop while the visitor keeps scrolling fast ────────── */
+.kno[data-mood="dizzy"] .kno-mover {
+  animation: kno-dizzy-spin 0.62s linear infinite;
+}
+.kno[data-mood="dizzy"] .kno-tail {
+  animation-duration: 0.3s;
+}
+.kno[data-mood="dizzy"] .kno-decor {
+  opacity: 0.4;
+  transition: opacity 200ms ease;
+}
+.kno .kno-orbit {
+  transform-box: view-box;
+  transform-origin: 17px 0px;
+  animation: kno-orbit 1.1s linear infinite;
+}
+@keyframes kno-dizzy-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes kno-orbit {
+  from { transform: scaleY(0.45) rotate(0deg); }
+  to { transform: scaleY(0.45) rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kno .kno-ear,
+  .kno .kno-orbit {
+    animation: none;
+  }
+}

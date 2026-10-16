@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { usePageTransition } from '@/components/PageTransition';
+import PixelLogo from '@/components/PixelLogo';
 
 export default function Navbar() {
   const [mounted, setMounted] = useState(false);
@@ -52,7 +53,9 @@ export default function Navbar() {
   return (
     <nav className="fixed top-6 left-0 right-0 z-50 flex items-center justify-between px-6">
       <div className="flex items-center">
-        <a href="/" onClick={handleLogoClick} className="text-2xl font-bold text-[#f72585]">TIFFANY</a>
+        <a href="/" onClick={handleLogoClick} aria-label="Tiffany, back to start" className="block py-1">
+          <PixelLogo cell={3} />
+        </a>
       </div>
 
       <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-8 px-10 py-3 shadow-xl rounded-[20px] backdrop-blur-md bg-white/5 dark:bg-white/5 border border-white/10">

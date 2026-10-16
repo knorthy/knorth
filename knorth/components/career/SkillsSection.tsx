@@ -1,89 +1,117 @@
 "use client";
-import { motion, useReducedMotion, type Variants } from "framer-motion";
-import { skillGroups } from "@/data/career";
-import { enter, STAGGER_GROUP, STAGGER_ITEM, VIEWPORT } from "./motion";
+// Tech stack as a keyboard: each category is a row of keycaps that slides sideways as the page
+// scrolls (rows alternate direction) and leans with scroll velocity. Keys press down on hover.
+import { useRef } from "react";
+import {
+  motion, useReducedMotion, useScroll, useSpring, useTransform, useVelocity,
+  type MotionValue,
+} from "framer-motion";
+import { TbCornerDownLeft } from "react-icons/tb";
+import { skillGroups, type SkillGroup } from "@/data/career";
+import PartHeading from "./PartHeading";
 
-// Split skill groups: left column gets first half, right column gets second half
-function splitGroups<T>(arr: T[]): [T[], T[]] {
-  const mid = Math.ceil(arr.length / 2);
-  return [arr.slice(0, mid), arr.slice(mid)];
+const FILL = 16; // keys per row before repeating, so short rows still cover a wide screen
+
+function Keycap({ name, Icon, color }: { name: string; Icon: SkillGroup["skills"][number]["icon"]; color: string }) {
+  return (
+    <span className="keycap shrink-0" style={{ "--key-tint": color } as React.CSSProperties}>
+      <span className="keycap-top">
+        <Icon aria-hidden className="w-5 h-5 shrink-0" style={{ color }} />
+        <span className="whitespace-nowrap">{name}</span>
+      </span>
+    </span>
+  );
+}
+
+function ModKey({ label, color }: { label: string; color: string }) {
+  return (
+    <span className="keycap keycap-mod shrink-0" style={{ "--key-tint": color } as React.CSSProperties}>
+      <span className="keycap-top justify-between">
+        <span className="whitespace-nowrap font-bold">{label}</span>
+        <TbCornerDownLeft aria-hidden className="w-3.5 h-3.5 opacity-60" />
+      </span>
+    </span>
+  );
+}
+
+function KeyRow({ group, index, progress, skew }: {
+  group: SkillGroup; index: number; progress: MotionValue<number>; skew: MotionValue<number>;
+}) {
+  const dir = index % 2 === 0 ? -1 : 1;
+  // Each row travels a slightly different distance so the board never moves as one slab
+  const travel = 18 + (index % 3) * 6;
+  const x = useTransform(progress, [0, 1], dir < 0 ? ["0%", `-${travel}%`] : [`-${travel}%`, "0%"]);
+
+  const reps = Math.max(2, Math.ceil(FILL / (group.skills.length + 1)));
+  const sets = Array.from({ length: reps });
+
+  return (
+    <div className="relative">
+      {/* Readable, non-repeating copy for assistive tech */}
+      <ul className="sr-only">
+        <li>{group.category}</li>
+        {group.skills.map((s) => <li key={s.name}>{s.name}</li>)}
+      </ul>
+      <motion.div aria-hidden className="flex gap-3 w-max will-change-transform" style={{ x, skewX: skew }}>
+        {sets.map((_, r) => (
+          <div key={r} className="flex gap-3">
+            <ModKey label={group.category} color={group.color} />
+            {group.skills.map(({ name, icon }) => (
+              <Keycap key={name} name={name} Icon={icon} color={group.color} />
+            ))}
+          </div>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
+function StaticBoard() {
+  return (
+    <div className="flex flex-col gap-6">
+      {skillGroups.map((g) => (
+        <div key={g.category}>
+          <h4 className="text-sm font-bold mb-3" style={{ color: g.color }}>{g.category}</h4>
+          <ul className="flex flex-wrap gap-3">
+            {g.skills.map(({ name, icon }) => (
+              <li key={name}><Keycap name={name} Icon={icon} color={g.color} /></li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function SkillsSection() {
   const reduce = useReducedMotion();
-
-  const list: Variants = {
-    hidden: {},
-    show: { transition: { staggerChildren: STAGGER_GROUP } },
-  };
-  const group: Variants = {
-    hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { ...enter(), staggerChildren: STAGGER_ITEM } },
-  };
-  const chip: Variants = reduce
-    ? { hidden: { opacity: 0 }, show: { opacity: 1, transition: enter() } }
-    : {
-        hidden: { opacity: 0, transform: "translateY(12px) scale(0.96)" },
-        show: { opacity: 1, transform: "translateY(0px) scale(1)", transition: enter() },
-      };
-
-  const [leftGroups, rightGroups] = splitGroups(skillGroups);
-
-  const SkillColumn = ({ groups, align }: { groups: typeof skillGroups; align: "left" | "right" }) => (
-    <motion.div
-      variants={list}
-      initial="hidden"
-      whileInView="show"
-      viewport={VIEWPORT}
-      className="flex flex-col gap-8"
-    >
-      {groups.map((g) => (
-        <motion.div key={g.category} variants={group} className={align === "right" ? "text-right" : "text-left"}>
-          <p
-            className="text-[11px] uppercase tracking-widest font-bold mb-3"
-            style={{ color: g.color }}
-          >
-            {g.category}
-          </p>
-          <ul className={`flex flex-wrap gap-2 ${align === "right" ? "justify-end" : "justify-start"}`}>
-            {g.skills.map(({ name, icon: Icon }) => (
-              <motion.li key={name} variants={chip}>
-                <span
-                  className="career-hover flex items-center gap-2 pl-2.5 pr-3.5 py-2 rounded-2xl bg-surface text-sm text-foreground/80"
-                  style={{ "--accent-tint": g.color } as React.CSSProperties}
-                >
-                  <Icon aria-hidden className="w-4 h-4 shrink-0" style={{ color: g.color }} />
-                  {name}
-                </span>
-              </motion.li>
-            ))}
-          </ul>
-        </motion.div>
-      ))}
-    </motion.div>
-  );
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress, scrollY } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const velocity = useVelocity(scrollY);
+  const smoothVel = useSpring(velocity, { stiffness: 200, damping: 40 });
+  const skew = useTransform(smoothVel, [-2500, 0, 2500], [8, 0, -8], { clamp: true });
+  const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 30, mass: 0.4 });
 
   return (
-    <section id="stack" className="relative py-20">
-      <p className="text-xs uppercase tracking-[0.3em] text-foreground/40 mb-8">01 — Tech stack</p>
+    <section id="stack" className="relative pt-16 pb-16">
+      <PartHeading
+        className="mb-8"
+        title={<>What I type <span style={{ color: "var(--color-accent2)" }}>with</span></>}
+        description="Every tool on this keyboard, frontend to firmware to final cut. Hover a key, it clicks."
+      />
 
-      {/* 3-column layout: left skills | center placeholder | right skills */}
-      <div className="grid grid-cols-[1fr_auto_1fr] gap-x-6 md:gap-x-10 items-start">
-        {/* Left column */}
-        <SkillColumn groups={leftGroups} align="left" />
-
-        {/* Center — reserved space for character */}
+      {reduce ? (
+        <StaticBoard />
+      ) : (
         <div
-          className="hidden md:flex items-start justify-center"
-          style={{ width: "clamp(140px, 18vw, 260px)", minHeight: "420px" }}
-          aria-hidden="true"
+          ref={ref}
+          className="keyboard relative left-1/2 -translate-x-1/2 w-screen overflow-hidden py-6 flex flex-col gap-3"
         >
-          {/* Character goes here */}
+          {skillGroups.map((g, i) => (
+            <KeyRow key={g.category} group={g} index={i} progress={progress} skew={skew} />
+          ))}
         </div>
-
-        {/* Right column */}
-        <SkillColumn groups={rightGroups} align="right" />
-      </div>
+      )}
     </section>
   );
 }
