@@ -234,7 +234,7 @@ export default function Contact() {
 
   // Email only shows once a real address is configured (lib/site.ts)
   const socialLinks = [
-    { Icon: FileDown, label: "Résumé", handle: "PDF download", link: RESUME_URL, color: ACCENT3, download: true },
+    { Icon: FileDown, label: "Resume", handle: "PDF download", link: RESUME_URL, color: ACCENT3, download: true },
     ...(CONTACT_EMAIL ? [{ Icon: Mail, label: "Email", handle: CONTACT_EMAIL, link: `mailto:${CONTACT_EMAIL}`, color: ACCENT4, download: false }] : []),
     { Icon: Linkedin, label: SOCIALS.linkedin.label, handle: SOCIALS.linkedin.handle, link: SOCIALS.linkedin.href, color: ACCENT, download: false },
     { Icon: Github, label: SOCIALS.github.label, handle: SOCIALS.github.handle, link: SOCIALS.github.href, color: ACCENT2, download: false },
@@ -244,7 +244,7 @@ export default function Contact() {
     <section
       ref={sectionRef}
       id="contact"
-      className="flex flex-col justify-center pt-16 pb-8 px-6 relative overflow-visible"
+      className="flex flex-col justify-center pt-16 pb-28 md:pb-8 px-6 relative overflow-visible"
     >
       {/* Galaxy dots */}
       <ContactDots />
@@ -321,7 +321,7 @@ export default function Contact() {
                     target={link.startsWith("http") ? "_blank" : undefined}
                     rel="noopener noreferrer"
                     download={download || undefined}
-                    className="group inline-flex items-center gap-3 py-1"
+                    className="group inline-flex items-center gap-3 py-2.5 md:py-1"
                   >
                     <Icon
                       size={18}
@@ -361,7 +361,7 @@ export default function Contact() {
         >
           <div className="flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-foreground/60">
             <p>© 2026 Tiffany Lyssa. All rights reserved.</p>
-            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs">
+            <div className="flex flex-wrap justify-center gap-x-4 md:gap-y-2 text-xs [&>a]:py-2.5 md:[&>a]:py-0">
               <a href="#home" className="hover:text-foreground transition-colors">
                 Home
               </a>
@@ -378,7 +378,7 @@ export default function Contact() {
                 Contact
               </a>
               <a href={RESUME_URL} download className="font-semibold text-foreground/80 hover:text-foreground transition-colors">
-                Résumé ↓
+                Resume ↓
               </a>
             </div>
           </div>
