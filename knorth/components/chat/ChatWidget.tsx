@@ -177,7 +177,8 @@ export default function ChatWidget() {
   return (
     <>
       {/* Launcher */}
-      <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[60] flex items-end gap-2">
+      {/* On phones Kniah sits at the right end of the nav dock and her bubble floats above her */}
+      <div className="kno-dock-slot fixed right-3 md:right-6 z-[60] flex items-end gap-2">
         <AnimatePresence mode="wait">
           {bubbleText && (
             <motion.div
@@ -187,7 +188,7 @@ export default function ChatWidget() {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 6, scale: 0.95, transition: { duration: 0.12 } }}
               transition={{ duration: 0.22, ease: EASE_OUT }}
-              className="mb-7 max-w-[200px] md:max-w-[240px] px-3 py-2 rounded-xl rounded-br-sm bg-[#fff0f6] text-[#3d0a24] text-xs font-semibold leading-snug shadow-lg pointer-events-none origin-bottom-right"
+              className="absolute bottom-full right-1 mb-2 md:static md:mb-7 w-max max-w-[200px] md:max-w-[240px] px-3 py-2 rounded-xl rounded-br-sm bg-[#fff0f6] text-[#3d0a24] text-xs font-semibold leading-snug shadow-lg pointer-events-none origin-bottom-right"
             >
               {bubbleText}
             </motion.div>
@@ -325,7 +326,7 @@ export default function ChatWidget() {
               </button>
             </form>
             <p className="px-4 pb-3 -mt-1 text-[11px] text-foreground/60">
-              AI answers from Tiffany&apos;s portfolio. They can be wrong, so double-check with her.
+              AI answers by Google Gemini from Tiffany&apos;s portfolio. They can be wrong, and chats may be reviewed by Google, so skip anything private.
             </p>
           </motion.div>
         )}

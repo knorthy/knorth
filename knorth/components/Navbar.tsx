@@ -1,19 +1,19 @@
 "use client";
-// Top bar. Desktop: pixel logo · centred section links · Résumé. Below md the centred pill would
-// collide with the logo and button, so it collapses into a menu sheet.
+// Top bar. Desktop: pixel logo · centred section links · Resume. Below md the section links move to a
+// dock along the bottom edge, where a thumb can reach them; Kniah sits at its right end.
 import React, { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
-import { Menu, X } from 'lucide-react';
+import { Briefcase, FolderOpen, Home, Mail, User, type LucideIcon } from 'lucide-react';
 import { usePageTransition } from '@/components/PageTransition';
 import PixelLogo from '@/components/PixelLogo';
 
-const LINKS = [
-  { id: 'home', label: 'Home', color: '#f72585' },
-  { id: 'about', label: 'About', color: '#b5ff4d' },
-  { id: 'projects', label: 'Projects', color: '#a855f7' },
-  { id: 'experience', label: 'Experience', color: '#ffe566' },
-  { id: 'contact', label: 'Contact', color: '#f72585' },
+const LINKS: { id: string; label: string; short: string; color: string; Icon: LucideIcon }[] = [
+  { id: 'home', label: 'Home', short: 'Home', color: '#f72585', Icon: Home },
+  { id: 'about', label: 'About', short: 'About', color: '#b5ff4d', Icon: User },
+  { id: 'projects', label: 'Projects', short: 'Projects', color: '#a855f7', Icon: FolderOpen },
+  { id: 'experience', label: 'Experience', short: 'Career', color: '#ffe566', Icon: Briefcase },
+  { id: 'contact', label: 'Contact', short: 'Contact', color: '#f72585', Icon: Mail },
 ];
 const SECTION_IDS = ['about', 'projects', 'experience', 'contact'];
 
@@ -48,17 +48,9 @@ function useActiveSection() {
 
 export default function Navbar() {
   const active = useActiveSection();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [resumeHovered, setResumeHovered] = useState(false);
   const pathname = usePathname();
   const { navigate } = usePageTransition();
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setMenuOpen(false);
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [menuOpen]);
 
   const handleLogoClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -74,6 +66,12 @@ export default function Navbar() {
 
   return (
     <nav aria-label="Main" className="fixed top-4 md:top-6 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-6">
+      {/* Phones: a fade behind the bar so scrolled content doesn't collide with the logo */}
+      <div
+        aria-hidden
+        className="md:hidden absolute inset-x-0 -top-4 h-24 -z-10 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, var(--background) 35%, color-mix(in srgb, var(--background) 70%, transparent) 65%, transparent)' }}
+      />
       {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- custom transition handles navigation */}
       <a href="/home" onClick={handleLogoClick} aria-label="Tiffany Lyssa, back to top" className="block py-1">
         <PixelLogo cell={3} />
@@ -122,49 +120,42 @@ export default function Navbar() {
         >
           {resumeHovered ? 'Hire Me' : 'Resume'}
         </motion.a>
-        <button
-          type="button"
-          onClick={() => setMenuOpen((o) => !o)}
-          aria-expanded={menuOpen}
-          aria-controls="mobile-menu"
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-          className="md:hidden grid place-items-center w-10 h-10 rounded-full backdrop-blur-md bg-white/[0.07] border border-white/15 text-white/85"
-        >
-          {menuOpen ? <X size={18} /> : <Menu size={18} />}
-        </button>
       </div>
 
-      {/* Mobile menu sheet */}
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div
-            id="mobile-menu"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6, transition: { duration: 0.12 } }}
-            transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
-            className="md:hidden absolute top-full left-4 right-4 mt-3 rounded-2xl border border-white/10 bg-[#141414]/95 backdrop-blur-md p-2"
-            style={{ boxShadow: '0 20px 40px -12px rgba(0,0,0,0.7)' }}
-          >
-            <ul>
-              {LINKS.map(({ id, label, color }) => (
-                <li key={id}>
-                  <a
-                    href={`#${id}`}
-                    onClick={() => setMenuOpen(false)}
-                    aria-current={active === id ? 'true' : undefined}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold hover:bg-white/5"
-                    style={{ color: active === id ? color : undefined }}
-                  >
-                    <span aria-hidden className="w-2 h-2 rounded-full" style={{ background: color }} />
-                    {label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Mobile dock: section links within thumb reach. It stops short of the right edge to leave
+          room for Kniah, who sits at its end. */}
+      <div
+        className="md:hidden fixed left-3 right-[100px] z-50"
+        style={{ bottom: 'max(12px, env(safe-area-inset-bottom))' }}
+      >
+        <ul className="flex items-stretch justify-between h-16 px-1.5 rounded-[22px] border border-white/10 bg-[#141414]/85 backdrop-blur-md shadow-[0_16px_32px_-12px_rgba(0,0,0,0.8)]">
+          {LINKS.map(({ id, short, color, Icon }) => {
+            const on = active === id;
+            return (
+              <li key={id} className="flex-1 min-w-0">
+                <a
+                  href={`#${id}`}
+                  aria-current={on ? 'true' : undefined}
+                  className="relative h-full flex flex-col items-center justify-center gap-1 rounded-2xl active:scale-95 transition-transform"
+                  style={{ color: on ? color : 'color-mix(in srgb, var(--foreground) 62%, transparent)' }}
+                >
+                  {on && (
+                    <motion.span
+                      layoutId="dock-active"
+                      aria-hidden
+                      className="absolute inset-x-0.5 inset-y-1.5 rounded-2xl"
+                      style={{ background: `color-mix(in srgb, ${color} 14%, transparent)` }}
+                      transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+                    />
+                  )}
+                  <Icon size={19} strokeWidth={on ? 2.4 : 2} aria-hidden className="relative" />
+                  <span className={`relative text-[10px] leading-none truncate max-w-full ${on ? 'font-bold' : 'font-medium'}`}>{short}</span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </nav>
   );
 }

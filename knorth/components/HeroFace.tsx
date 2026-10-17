@@ -887,7 +887,7 @@ function FloatingDots() {
     <canvas
       ref={canvasRef}
       className="absolute inset-0 pointer-events-none"
-      style={{ zIndex: 1 }}
+      style={{ zIndex: 0 }}
     />
   );
 }
@@ -908,13 +908,6 @@ export default function HeroFace() {
     setWipeOrigin(origin);
     setWipeActive(true);
   }, []);
-
-  // Keyboard, screen-reader and impatient path past the intro
-  const skipIntro = useCallback(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { router.push('/home'); return; }
-    setWipeOrigin({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-    setWipeActive(true);
-  }, [router]);
 
   const handleWipeCovered = useCallback(() => {
     // Navigate while the screen is fully covered
@@ -946,7 +939,7 @@ export default function HeroFace() {
       {/* WebGL Canvas */}
       <Canvas
         className={`transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-        style={{ touchAction: 'none' }} // dragging the face on touch shouldn't scroll the page
+        style={{ touchAction: 'none', position: 'absolute', inset: 0, zIndex: 1 }}
         onCreated={() => {
           setTimeout(() => setIsLoaded(true), 100);
         }}
@@ -959,29 +952,15 @@ export default function HeroFace() {
       </Canvas>
 
       {/* Doodle text: left of the character on desktop, above it on phones */}
-      <div className="absolute inset-x-0 top-[9%] md:inset-0 md:top-0 flex items-start md:items-center pointer-events-none">
+      <div className="absolute inset-x-0 top-[9%] md:inset-0 md:top-0 flex items-start md:items-center pointer-events-none" style={{ zIndex: 2 }}>
         <div className="w-full md:w-1/2 flex justify-center">
           <DoodleText />
         </div>
       </div>
 
       {/* Interaction hint: right of the character on desktop, below it on phones */}
-      <div className="absolute inset-x-0 bottom-[16%] md:inset-0 md:bottom-auto flex items-end md:items-center pointer-events-none">
-        <div className="w-full md:w-1/2 md:ml-auto flex justify-center">
-          <DoodleInteract />
-        </div>
-      </div>
-
-      {/* Way past the intro without the gesture */}
-      <div className="absolute inset-x-0 bottom-6 flex flex-col items-center gap-1.5 z-10">
-        <button
-          type="button"
-          onClick={skipIntro}
-          className="px-5 py-2.5 rounded-full text-sm font-semibold text-white/90 bg-white/[0.08] border border-white/20 backdrop-blur-md hover:bg-white/[0.14] transition-colors"
-        >
-          Skip intro →
-        </button>
-        <p className="text-xs text-white/55">or grab the face and let go</p>
+      <div className="absolute inset-x-0 bottom-[16%] md:inset-y-0 md:right-0 md:left-auto md:w-1/2 flex items-end md:items-center justify-center pointer-events-none" style={{ zIndex: 2 }}>
+        <DoodleInteract />
       </div>
 
       {/* Circle wipe — mounts only when triggered */}

@@ -9,6 +9,7 @@ import {
   AnimatePresence, animate, motion, useMotionTemplate, useMotionValue, useMotionValueEvent, useScroll, useTransform,
 } from "framer-motion";
 import { useReducedMotion } from "@/components/useReducedMotionSafe";
+import { useIsMobile } from "@/components/useIsMobile";
 import { TbArrowsHorizontal, TbPhoto } from "react-icons/tb";
 import { services, type Service } from "@/data/services";
 import { ACCENT3 } from "@/data/career";
@@ -56,7 +57,7 @@ function Wheel({ active, onPick, axis }: { active: number; onPick: (i: number) =
                 onClick={() => onPick(i)}
                 aria-current={isActive ? "true" : undefined}
                 tabIndex={isActive ? 0 : -1}
-                className={`block whitespace-nowrap text-left transition-colors duration-200 ${
+                className={`block whitespace-nowrap text-left py-3 px-1 transition-colors duration-200 ${
                   vertical ? "-translate-y-1/2" : "-translate-x-1/2 -translate-y-1/2"
                 } ${isActive ? "text-xl font-bold text-foreground" : "text-lg text-foreground/60 hover:text-foreground"}`}
               >
@@ -133,7 +134,7 @@ function Detail({ service, onPick }: { service: Service; onPick: (i: number) => 
               <button
                 key={slug}
                 onClick={() => onPick(i)}
-                className="font-mono underline-offset-4 decoration-1 hover:underline"
+                className="inline-block py-2.5 -my-2.5 font-mono underline-offset-4 decoration-1 hover:underline"
                 style={{ color: services[i].color }}
               >
                 /{slug}
@@ -338,7 +339,7 @@ function Gallery({ service }: { service: Service }) {
           aria-label={`Show next ${service.name} image (${incoming + 1} of ${total})`}
           // pointer clicks are handled by the panel; this covers Enter/Space from the keyboard
           onClick={(e) => { if (e.detail === 0) sweep(); }}
-          className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full grid place-items-center text-[#0e0e0e]"
+          className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 md:w-9 md:h-9 rounded-full grid place-items-center text-[#0e0e0e]"
           style={{ left, background: service.color, boxShadow: "0 6px 16px -4px rgba(0,0,0,0.6)" }}
         >
           <TbArrowsHorizontal aria-hidden className="w-4 h-4" />
@@ -368,6 +369,7 @@ function Gallery({ service }: { service: Service }) {
 // ── Section ──────────────────────────────────────────────────────────────────
 export default function ServicesWheel() {
   const reduce = useReducedMotion();
+  const mobile = useIsMobile();
   const sectionRef = useRef<HTMLElement>(null);
   const [active, setActive] = useState(0);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end end"] });
@@ -389,8 +391,8 @@ export default function ServicesWheel() {
   const service = services[active];
 
   return (
-    <section id="services" ref={sectionRef} className="relative" style={{ height: `${100 + N * 40}vh` }}>
-      <div className="sticky top-0 h-screen flex flex-col justify-start pt-20 md:pt-24 pb-6 gap-4 md:gap-6">
+    <section id="services" ref={sectionRef} className="relative" style={{ height: `${100 + N * (mobile ? 24 : 40)}vh` }}>
+      <div className="sticky top-0 h-svh flex flex-col justify-start pt-20 md:pt-24 pb-24 md:pb-6 gap-4 md:gap-6">
         {/* Career intro rides with the panel it introduces */}
         <div>
           <h2 className="font-mono font-semibold text-xl md:text-2xl leading-none tracking-[-0.02em]">

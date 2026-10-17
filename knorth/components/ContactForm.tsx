@@ -135,7 +135,7 @@ export default function ContactForm() {
               id={`${id}-${key}`}
               type={key === "email" ? "email" : "text"}
               autoComplete={key === "email" ? "email" : "name"}
-              placeholder={key === "name" ? "Jordan from Acme" : "jordan@acme.com"}
+              placeholder={key === "name" ? "Alan Turing" : "alanturing@gmail.com"}
               value={fields[key]}
               onChange={set(key)}
               maxLength={key === "email" ? 200 : 100}

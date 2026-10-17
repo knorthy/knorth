@@ -11,6 +11,7 @@ import {
   AnimatePresence, motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform, useVelocity, type MotionValue, type Variants,
 } from "framer-motion";
 import { useReducedMotion } from "@/components/useReducedMotionSafe";
+import { useIsMobile } from "@/components/useIsMobile";
 import { TbArrowNarrowRight } from "react-icons/tb";
 import { jobs, affiliations, type Job, type Affiliation } from "@/data/career";
 import { EASE_OUT, enter, ENTER_DURATION_LG } from "./motion";
@@ -185,7 +186,7 @@ function ScrollStory() {
     <div className="relative hidden md:block">
       {/* Light in the active job's colour, pinned behind the photo column */}
       <div aria-hidden className="absolute inset-0 pointer-events-none">
-        <div className="sticky top-0 h-screen flex items-center justify-center">
+        <div className="sticky top-0 h-svh flex items-center justify-center">
           <motion.div
             className="w-[520px] h-[520px] rounded-full"
             animate={{ backgroundColor: job.color }}
@@ -198,7 +199,7 @@ function ScrollStory() {
       <div className="relative grid grid-cols-[1fr_minmax(0,300px)_1fr] gap-12 lg:gap-16">
         {/* LEFT — pinned title */}
         <div>
-          <div className="sticky top-0 h-screen flex flex-col justify-center">
+          <div className="sticky top-0 h-svh flex flex-col justify-center">
             <div className="relative">
             {/* The part heading hangs just above the pinned title, so it stays with the details */}
             <PartHeading
@@ -238,7 +239,7 @@ function ScrollStory() {
 
         {/* RIGHT — pinned details, counter and skip */}
         <div>
-          <div className="sticky top-0 h-screen flex flex-col justify-center">
+          <div className="sticky top-0 h-svh flex flex-col justify-center">
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.div key={active} initial="enter" animate="show" exit="exit" className="space-y-3 max-w-[38ch]">
                 <MaskLine className="text-sm text-foreground/55" index={0}>
@@ -304,7 +305,7 @@ function MobileJob({ job, index }: { job: Job; index: number }) {
   const clipPath = useWindowClip(scrollYProgress);
   return (
     <motion.li variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.2 }}>
-      <motion.div ref={ref} className="aspect-[4/3] rounded-[18px] overflow-hidden mb-5" style={reduce ? undefined : { clipPath }}>
+      <motion.div ref={ref} className="aspect-[16/9] rounded-[18px] overflow-hidden mb-5" style={reduce ? undefined : { clipPath }}>
         <JobVisual job={job} index={index} />
       </motion.div>
       <p className="text-xs font-medium tracking-wide mb-1" style={{ color: job.color }}>{job.period}</p>
@@ -328,7 +329,7 @@ function MobileList() {
         title={<>Put to <span style={{ color: "var(--color-accent)" }}>work</span></>}
         description="Where I've worked so far."
       />
-      <ol className="flex flex-col gap-14">
+      <ol className="flex flex-col gap-12">
         {jobs.map((job, i) => <MobileJob key={job.role} job={job} index={i} />)}
       </ol>
     </div>
@@ -406,8 +407,32 @@ function SideQuestsIntro() {
   );
 }
 
+// Phones: a native sideways swipe instead of a pinned scroll, a gesture the thumb already knows and
+// about two thousand pixels less vertical scrolling
+function SwipeQuests({ sectionRef }: { sectionRef: React.RefObject<HTMLDivElement | null> }) {
+  return (
+    <div id="side-quests" ref={sectionRef} className="mt-16">
+      <PartHeading
+        title={<>Side <span style={{ color: "var(--color-accent3)" }}>quests</span></>}
+        description="Orgs I help run and events I've volunteered for, outside the day job. One badge each."
+      />
+      <p aria-hidden className="mt-4 inline-flex items-center gap-2 text-xs text-foreground/65">
+        swipe <TbArrowNarrowRight className="w-4 h-4" />
+      </p>
+      <div className="relative -mx-6 mt-2">
+        <span aria-hidden className="absolute left-0 right-0 top-0 h-[2px] bg-white/25" />
+        <ul className="flex gap-5 items-start overflow-x-auto snap-x snap-mandatory scroll-px-6 px-6 pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {QUESTS.map((aff, i) => <Badge key={aff.org} aff={aff} index={i} />)}
+          <li aria-hidden className="shrink-0 w-1" />
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 function SideQuests() {
   const reduce = useReducedMotion();
+  const mobile = useIsMobile();
   const sectionRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const [distance, setDistance] = useState(0);
@@ -436,6 +461,8 @@ function SideQuests() {
   });
   const fill = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
+  if (mobile && !reduce) return <SwipeQuests sectionRef={sectionRef} />;
+
   if (reduce) {
     return (
       <div id="side-quests" ref={sectionRef} className="py-20">
@@ -456,7 +483,7 @@ function SideQuests() {
       className="relative left-1/2 -translate-x-1/2 w-screen mt-16"
       style={{ height: `calc(100vh + ${distance}px)` }}
     >
-      <div className="sticky top-0 h-screen overflow-hidden flex flex-col justify-center">
+      <div className="sticky top-0 h-svh overflow-hidden flex flex-col justify-center">
         <motion.div
           ref={trackRef}
           className="relative flex items-start gap-8 md:gap-12 w-max px-6 md:px-[max(1.5rem,calc((100vw-72rem)/2+1.5rem))] pt-20"

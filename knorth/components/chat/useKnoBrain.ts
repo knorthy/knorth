@@ -1,7 +1,7 @@
 "use client";
 // Kniah's brain: watches what the visitor is doing and decides what she says and how she moves.
 // - Every section has first-visit lines and different lines for coming back
-// - Interactions get their own lines: keys, nav, logo, résumé, socials, gallery, wheel, slider,
+// - Interactions get their own lines: keys, nav, logo, resume, socials, gallery, wheel, slider,
 //   certificates, the contact form, selecting/copying, double-click, typing, leaving, resizing…
 // - Scrolling fast nonstop: she spins until the visitor slows down, getting dizzier the longer it goes
 // - No activity for a while: sings, then falls asleep; any activity wakes her with a startled flip
@@ -46,7 +46,7 @@ const SECTIONS: Record<string, { first: string[]; again: string[]; react?: React
     react: THINK,
   },
   stack: {
-    first: ["hover a key, it clicks!", "so many keys, so little time"],
+    first: ["press a key, it clicks!", "so many keys, so little time"],
     again: ["click clack, back again", "the keyboard remembers you"],
     react: SING,
   },
@@ -77,7 +77,7 @@ const LINES = {
   keycap: ["click clack!", "that one's my favorite key", "tap tap tap", "ooh, satisfying"],
   nav: ["going somewhere?", "shortcut! nice", "I'll come with you"],
   logo: ["that's her name, in pixels like me", "cute logo, right? I helped. not really"],
-  resume: ["psst, she's hireable", "the résumé! good choice", "go on, click it"],
+  resume: ["psst, she's hireable", "the resume! good choice", "go on, click it"],
   linkedin: ["LinkedIn: very professional over there", "go connect, she won't bite"],
   github: ["go peek at her code", "GitHub! where the magic lives"],
   social: ["she's on there too", "more Tiffany, elsewhere"],

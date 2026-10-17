@@ -8,6 +8,7 @@ import {
   motion, useMotionValueEvent, useScroll, useSpring, useTransform, type MotionValue,
 } from "framer-motion";
 import { useReducedMotion } from "@/components/useReducedMotionSafe";
+import { useIsMobile } from "@/components/useIsMobile";
 import { TbExternalLink } from "react-icons/tb";
 import { certifications, type Certification } from "@/data/career";
 import PartHeading from "./PartHeading";
@@ -185,6 +186,7 @@ export default function CertificationsGrid() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const deskRef = useRef<HTMLDivElement>(null);
   const total = certifications.length;
+  const mobile = useIsMobile();
   const [order, setOrder] = useState(() => certifications.map((_, i) => i));
   const [landed, setLanded] = useState(0);
 
@@ -217,9 +219,9 @@ export default function CertificationsGrid() {
       id="certifications"
       ref={sectionRef}
       className="relative"
-      style={{ height: `${120 + total * 55}vh` }}
+      style={{ height: `${mobile ? 100 + total * 34 : 120 + total * 55}vh` }}
     >
-      <div className="sticky top-0 h-screen flex flex-col pt-24 pb-10">
+      <div className="sticky top-0 h-svh flex flex-col pt-24 pb-28 md:pb-10">
         <Heading landed={landed} hint={canDrag ? "drag them around" : "tap one to pull it up"} />
         <div ref={deskRef} className="relative flex-1 mt-5">
           {/* the desk */}

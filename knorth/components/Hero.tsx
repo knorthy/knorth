@@ -248,12 +248,12 @@ function GalleryWithCursor() {
 // ── Hero ──────────────────────────────────────────────────────────────────────
 export default function Hero() {
   const socialIcons = [
-    { icon: <Instagram size={20} />, link: "#" },
-    { icon: <Linkedin size={20} />, link: "https://www.linkedin.com/in/tiffany-lyssa-4b210b281/" },
-    { icon: <Github size={20} />, link: "https://github.com/knorthy" },
-    { icon: <Twitter size={20} />, link: "https://x.com/kno_orth" },
-    { icon: <Figma size={20} />, link: "#" },
-    { icon: <Facebook size={20} />, link: "https://www.facebook.com/lystffny/" },
+    { icon: <Instagram size={20} />, link: "#", label: "Instagram" },
+    { icon: <Linkedin size={20} />, link: "https://www.linkedin.com/in/tiffany-lyssa-4b210b281/", label: "LinkedIn" },
+    { icon: <Github size={20} />, link: "https://github.com/knorthy", label: "GitHub" },
+    { icon: <Twitter size={20} />, link: "https://x.com/kno_orth", label: "X" },
+    { icon: <Figma size={20} />, link: "#", label: "Figma" },
+    { icon: <Facebook size={20} />, link: "https://www.facebook.com/lystffny/", label: "Facebook" },
   ];
 
   const developSkills = ["Next.js", "Tailwind", "React", "Javascript", "CSS", "Node.js", "Python", "SpringBoot", "FlutterFlow"];
@@ -339,9 +339,10 @@ export default function Hero() {
               </p>
             </div>
 
-            <div className="flex gap-5 mt-4 text-foreground/60">
+            {/* 44px tap areas around 20px icons; the negative margin keeps the row where it was */}
+            <div className="flex gap-0.5 -mx-3 mt-1 text-foreground/60">
               {socialIcons.map((item, idx) => (
-                <motion.a key={idx} href={item.link} whileHover={{ y: -3, color: ACCENT }} className="transition-colors">
+                <motion.a key={idx} href={item.link} aria-label={item.label} whileHover={{ y: -3, color: ACCENT }} className="p-3 transition-colors">
                   {item.icon}
                 </motion.a>
               ))}
@@ -397,7 +398,7 @@ export default function Hero() {
             <TiltedCard
               imageSrc="/jennie.jpg" altText="Tiffany Lyssa" captionText="Tiffany Lyssa"
               containerHeight="600px" containerWidth="100%" imageHeight="500px" imageWidth="400px"
-              rotateAmplitude={10} scaleOnHover={1.05} showTooltip={true} displayOverlayContent={true}
+              rotateAmplitude={10} scaleOnHover={1.05} showMobileWarning={false} showTooltip={true} displayOverlayContent={true}
               overlayContent={
                 <div className="backdrop-blur-md px-4 py-2 rounded-lg text-white text-xs font-semibold"
                   style={{ background: `${ACCENT}33`, border: `1px solid ${ACCENT}60` }}>
