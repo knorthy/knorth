@@ -8,9 +8,9 @@
 // lanyard badges that swing with scroll speed.
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
-  AnimatePresence, motion, useMotionTemplate, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform,
-  useVelocity, type MotionValue, type Variants,
+  AnimatePresence, motion, useMotionTemplate, useMotionValue, useScroll, useSpring, useTransform, useVelocity, type MotionValue, type Variants,
 } from "framer-motion";
+import { useReducedMotion } from "@/components/useReducedMotionSafe";
 import { TbArrowNarrowRight } from "react-icons/tb";
 import { jobs, affiliations, type Job, type Affiliation } from "@/data/career";
 import { EASE_OUT, enter, ENTER_DURATION_LG } from "./motion";
@@ -253,7 +253,7 @@ function ScrollStory() {
             <div className="absolute bottom-24 left-0 right-0 flex items-center justify-between">
               <button
                 onClick={skip}
-                className="text-xs tracking-wide text-foreground/45 hover:text-foreground/85 transition-colors"
+                className="text-xs tracking-wide text-foreground/65 hover:text-foreground transition-colors"
               >
                 Skip to side quests
               </button>
@@ -274,7 +274,7 @@ function ScrollStory() {
                     </motion.span>
                   </AnimatePresence>
                 </span>
-                <span className="text-foreground/40">/ {pad(jobs.length)}</span>
+                <span className="text-foreground/60">/ {pad(jobs.length)}</span>
               </p>
             </div>
           </div>
@@ -336,7 +336,16 @@ function MobileList() {
 }
 
 // ── Side quests: leadership & volunteering as lanyard badges on a sideways track ──
-function Badge({ aff, index, sway }: { aff: Affiliation; index: number; sway?: MotionValue<number> }) {
+// Several roles in the same org share one badge
+type Quest = Affiliation & { roles: { role: string; period: string }[] };
+const QUESTS: Quest[] = affiliations.reduce<Quest[]>((list, a) => {
+  const same = list.find((q) => q.org === a.org && q.kind === a.kind);
+  if (same) same.roles.push({ role: a.role, period: a.period });
+  else list.push({ ...a, roles: [{ role: a.role, period: a.period }] });
+  return list;
+}, []);
+
+function Badge({ aff, index, sway }: { aff: Quest; index: number; sway?: MotionValue<number> }) {
   // Alternate swing amount and strap length so the row hangs unevenly, like real lanyards
   const still = useMotionValue(0);
   const swing = useTransform(sway ?? still, (v) => v * (index % 2 === 0 ? 1 : -0.7));
@@ -368,9 +377,15 @@ function Badge({ aff, index, sway }: { aff: Affiliation; index: number; sway?: M
           </span>
         </div>
         <div className="p-5 pb-6 flex flex-col gap-2 min-h-[210px]">
-          <p className="text-xs font-medium tabular-nums" style={{ color: aff.color }}>{aff.period}</p>
           <h4 className="text-xl font-bold leading-tight text-balance">{aff.org}</h4>
-          <p className="text-sm text-foreground/60 leading-snug mt-auto">{aff.role}</p>
+          <ul className="mt-auto flex flex-col gap-2.5">
+            {aff.roles.map((r) => (
+              <li key={r.role}>
+                <p className="text-sm text-foreground/80 leading-snug">{r.role}</p>
+                <p className="text-xs font-medium tabular-nums" style={{ color: `color-mix(in srgb, ${aff.color} 70%, white)` }}>{r.period}</p>
+              </li>
+            ))}
+          </ul>
         </div>
       </article>
     </motion.li>
@@ -384,7 +399,7 @@ function SideQuestsIntro() {
         title={<>Side <span style={{ color: "var(--color-accent3)" }}>quests</span></>}
         description="Orgs I help run and events I've volunteered for, outside the day job. One badge each."
       />
-      <p aria-hidden className="mt-5 inline-flex items-center gap-2 text-xs text-foreground/45">
+      <p aria-hidden className="mt-5 inline-flex items-center gap-2 text-xs text-foreground/65">
         keep scrolling <TbArrowNarrowRight className="w-4 h-4" />
       </p>
     </div>
@@ -427,7 +442,7 @@ function SideQuests() {
         <div className="flex gap-6 overflow-x-auto snap-x pb-6 items-start">
           <SideQuestsIntro />
           <ul className="flex gap-6 items-start">
-            {affiliations.map((aff, i) => <Badge key={aff.org + aff.role} aff={aff} index={i} />)}
+            {QUESTS.map((aff, i) => <Badge key={aff.org} aff={aff} index={i} />)}
           </ul>
         </div>
       </div>
@@ -451,8 +466,8 @@ function SideQuests() {
           <span aria-hidden className="absolute left-0 right-0 top-20 h-[2px] bg-white/25" />
           <SideQuestsIntro />
           <ul className="flex items-start gap-8 md:gap-12">
-            {affiliations.map((aff, i) => (
-              <Badge key={aff.org + aff.role} aff={aff} index={i} sway={sway} />
+            {QUESTS.map((aff, i) => (
+              <Badge key={aff.org} aff={aff} index={i} sway={sway} />
             ))}
           </ul>
         </motion.div>

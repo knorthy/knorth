@@ -654,9 +654,9 @@ function DoodleText() {
   return (
     <img
       src={DOODLE_FRAMES[frame]}
-      alt="doodle text"
+      alt=""
       style={{ imageRendering: 'pixelated' }}
-      className="w-auto h-auto max-w-[260px] select-none pointer-events-none"
+      className="w-auto h-auto max-w-[min(260px,70vw)] max-h-[22vh] md:max-h-none select-none pointer-events-none"
     />
   );
 }
@@ -678,9 +678,9 @@ function DoodleInteract() {
   return (
     <img
       src={INT_FRAMES[frame]}
-      alt="interaction hint"
+      alt="Grab the face and pull to enter"
       style={{ imageRendering: 'pixelated' }}
-      className="w-auto h-auto max-w-[260px] select-none pointer-events-none"
+      className="w-auto h-auto max-w-[min(260px,70vw)] max-h-[18vh] md:max-h-none select-none pointer-events-none"
     />
   );
 }
@@ -909,6 +909,13 @@ export default function HeroFace() {
     setWipeActive(true);
   }, []);
 
+  // Keyboard, screen-reader and impatient path past the intro
+  const skipIntro = useCallback(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { router.push('/home'); return; }
+    setWipeOrigin({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+    setWipeActive(true);
+  }, [router]);
+
   const handleWipeCovered = useCallback(() => {
     // Navigate while the screen is fully covered
     router.push('/home');
@@ -920,7 +927,8 @@ export default function HeroFace() {
   }, []);
 
   return (
-    <div className="relative w-full h-screen" style={{ background: '#0e0e0e' }}>
+    <main className="relative w-full h-[100svh] overflow-hidden" style={{ background: '#0e0e0e' }}>
+      <h1 className="sr-only">Tiffany Lyssa: software engineer, designer and developer</h1>
       {/* Floating ambient dots */}
       <FloatingDots />
 
@@ -929,8 +937,8 @@ export default function HeroFace() {
         <div className="absolute inset-0 flex items-center justify-center">
           <img
             src="/hero/face.png"
-            alt="Loading..."
-            className="w-[400px] h-[400px] object-contain"
+            alt="Illustrated portrait of Tiffany"
+            className="w-[min(400px,80vw)] h-[min(400px,80vw)] object-contain"
           />
         </div>
       )}
@@ -950,18 +958,30 @@ export default function HeroFace() {
         <Scene onHoverChange={setIsHovered} onGrabSettle={handleGrabSettle} />
       </Canvas>
 
-      {/* Doodle text — left side of character */}
-      <div className="absolute inset-0 flex items-center pointer-events-none">
-        <div className="w-1/2 flex justify-center">
+      {/* Doodle text: left of the character on desktop, above it on phones */}
+      <div className="absolute inset-x-0 top-[9%] md:inset-0 md:top-0 flex items-start md:items-center pointer-events-none">
+        <div className="w-full md:w-1/2 flex justify-center">
           <DoodleText />
         </div>
       </div>
 
-      {/* Interaction hint — right side of character */}
-      <div className="absolute inset-0 flex items-center pointer-events-none">
-        <div className="w-1/2 ml-auto flex justify-center">
+      {/* Interaction hint: right of the character on desktop, below it on phones */}
+      <div className="absolute inset-x-0 bottom-[16%] md:inset-0 md:bottom-auto flex items-end md:items-center pointer-events-none">
+        <div className="w-full md:w-1/2 md:ml-auto flex justify-center">
           <DoodleInteract />
         </div>
+      </div>
+
+      {/* Way past the intro without the gesture */}
+      <div className="absolute inset-x-0 bottom-6 flex flex-col items-center gap-1.5 z-10">
+        <button
+          type="button"
+          onClick={skipIntro}
+          className="px-5 py-2.5 rounded-full text-sm font-semibold text-white/90 bg-white/[0.08] border border-white/20 backdrop-blur-md hover:bg-white/[0.14] transition-colors"
+        >
+          Skip intro →
+        </button>
+        <p className="text-xs text-white/55">or grab the face and let go</p>
       </div>
 
       {/* Circle wipe — mounts only when triggered */}
@@ -972,6 +992,6 @@ export default function HeroFace() {
           onDone={handleWipeDone}
         />
       )}
-    </div>
+    </main>
   );
 }

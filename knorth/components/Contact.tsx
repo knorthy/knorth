@@ -1,9 +1,9 @@
 "use client";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowUpRight, Check, Github, Linkedin, Mail } from "lucide-react";
+import { ArrowUpRight, FileDown, Github, Linkedin, Mail } from "lucide-react";
+import ContactForm from "@/components/ContactForm";
+import { CONTACT_EMAIL, RESUME_URL, SOCIALS } from "@/lib/site";
 
-// Placeholder: replace with the address the email button should open
-const CONTACT_EMAIL = "hello@example.com";
 import { useState, useRef, useEffect } from "react";
 
 const ACCENT = "#f72585";
@@ -232,34 +232,12 @@ export default function Contact() {
   const scale = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.8, 1, 1, 0.9]);
   const y = useTransform(scrollYProgress, [0, 0.5, 1], [100, 0, -100]);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    message: "",
-  });
-  const [bribe, setBribe] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-
-  const allFilled =
-    formData.name.trim() !== "" &&
-    formData.email.trim() !== "" &&
-    formData.message.trim() !== "";
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Form submitted:", formData, { bribe });
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setFormData({ name: "", email: "", message: "" });
-      setBribe(false);
-    }, 10000);
-  };
-
+  // Email only shows once a real address is configured (lib/site.ts)
   const socialLinks = [
-    { Icon: Mail, label: "Email", handle: CONTACT_EMAIL, link: `mailto:${CONTACT_EMAIL}`, color: ACCENT3 },
-    { Icon: Linkedin, label: "LinkedIn", handle: "tiffany-lyssa", link: "https://www.linkedin.com/in/tiffany-lyssa-4b210b281/", color: ACCENT },
-    { Icon: Github, label: "GitHub", handle: "knorthy", link: "https://github.com/knorthy", color: ACCENT2 },
+    { Icon: FileDown, label: "Résumé", handle: "PDF download", link: RESUME_URL, color: ACCENT3, download: true },
+    ...(CONTACT_EMAIL ? [{ Icon: Mail, label: "Email", handle: CONTACT_EMAIL, link: `mailto:${CONTACT_EMAIL}`, color: ACCENT4, download: false }] : []),
+    { Icon: Linkedin, label: SOCIALS.linkedin.label, handle: SOCIALS.linkedin.handle, link: SOCIALS.linkedin.href, color: ACCENT, download: false },
+    { Icon: Github, label: SOCIALS.github.label, handle: SOCIALS.github.handle, link: SOCIALS.github.href, color: ACCENT2, download: false },
   ];
 
   return (
@@ -272,9 +250,7 @@ export default function Contact() {
       <ContactDots />
 
       {/* Blobs */}
-      <div className="absolute pointer-events-none" style={{ top: "-5%", left: "-8%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
       <div className="absolute pointer-events-none" style={{ bottom: "0%", right: "-8%", width: 480, height: 480, borderRadius: "50%", background: "radial-gradient(circle, rgba(247,37,133,0.13) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
-      <div className="absolute pointer-events-none" style={{ top: "40%", right: "-12%", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)", filter: "blur(55px)", zIndex: 0 }} />
       {/* Large background text with scroll animation */}
       <motion.div 
         className="absolute top-[-4%] left-1/2 -translate-x-1/2 pointer-events-none select-none"
@@ -284,7 +260,8 @@ export default function Contact() {
           y,
         }}
       >
-        <h3 
+        <p
+          aria-hidden
           className="text-[120px] md:text-[200px] lg:text-[250px] font-bold whitespace-nowrap"
           style={{
             background: "linear-gradient(to bottom, rgba(240, 240, 240, 0.02) 0%, rgba(240, 240, 240, 0.02) 40%, transparent 100%)",
@@ -294,10 +271,10 @@ export default function Contact() {
           }}
         >
           Let&apos;s Build
-        </h3>
+        </p>
       </motion.div>
 
-      <div className="max-w-6xl mx-auto w-full relative z-10 flex flex-col justify-center flex-1 pt-25 md:pt-33">
+      <div className="max-w-6xl mx-auto w-full relative z-10 flex flex-col justify-center flex-1 pt-20 md:pt-28">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* LEFT SIDE - Info */}
           <motion.div
@@ -331,7 +308,7 @@ export default function Contact() {
 
             {/* Where else to find me */}
             <ul className="flex flex-col gap-2">
-              {socialLinks.map(({ Icon, label, handle, link, color }, idx) => (
+              {socialLinks.map(({ Icon, label, handle, link, color, download }, idx) => (
                 <motion.li
                   key={label}
                   initial={{ opacity: 0, x: -20 }}
@@ -341,8 +318,9 @@ export default function Contact() {
                 >
                   <a
                     href={link}
-                    target={link.startsWith("mailto:") ? undefined : "_blank"}
+                    target={link.startsWith("http") ? "_blank" : undefined}
                     rel="noopener noreferrer"
+                    download={download || undefined}
                     className="group inline-flex items-center gap-3 py-1"
                   >
                     <Icon
@@ -354,7 +332,7 @@ export default function Contact() {
                     <span className="text-sm font-semibold text-foreground transition-colors group-hover:text-[var(--hover-tint)]" style={{ "--hover-tint": color } as React.CSSProperties}>
                       {label}
                     </span>
-                    <span className="text-sm text-foreground/50 truncate">{handle}</span>
+                    <span className="text-sm text-foreground/60 truncate">{handle}</span>
                   </a>
                 </motion.li>
               ))}
@@ -369,117 +347,7 @@ export default function Contact() {
             transition={{ duration: 0.6 }}
             className="w-full"
           >
-            <form
-              onSubmit={handleSubmit}
-              className="rounded-3xl p-6 md:p-8 space-y-5 backdrop-blur-xl"
-              style={{
-                backgroundColor: "rgba(26, 26, 26, 0.4)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
-              }}
-            >
-              {/* Name and Email row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="Name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  className="px-5 py-4 rounded-2xl bg-[#0e0e0e] border border-white/5 text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-white/20 transition-colors text-sm"
-                  required
-                />
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className="px-5 py-4 rounded-2xl bg-[#0e0e0e] border border-white/5 text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-white/20 transition-colors text-sm"
-                  required
-                />
-              </div>
-
-              {/* Message */}
-              <textarea
-                placeholder="Message"
-                value={formData.message}
-                onChange={(e) =>
-                  setFormData({ ...formData, message: e.target.value })
-                }
-                rows={5}
-                className="w-full px-5 py-4 rounded-2xl bg-[#0e0e0e] border border-white/5 text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-white/20 transition-colors resize-none text-sm"
-                required
-              />
-
-              {/* Bribe checkbox — only shows when all fields are filled */}
-              {allFilled && (
-                <motion.label
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="flex items-start gap-3 cursor-pointer group select-none"
-                >
-                  <div className="relative mt-0.5 shrink-0">
-                    <input
-                      type="checkbox"
-                      checked={bribe}
-                      onChange={(e) => setBribe(e.target.checked)}
-                      className="sr-only"
-                    />
-                    <div
-                      className="w-5 h-5 rounded-md border flex items-center justify-center transition-all"
-                      style={{
-                        backgroundColor: bribe ? `${ACCENT2}20` : "transparent",
-                        borderColor: bribe ? ACCENT2 : "rgba(255,255,255,0.15)",
-                      }}
-                    >
-                      {bribe && <Check size={12} style={{ color: ACCENT2 }} />}
-                    </div>
-                  </div>
-                  <span className="text-xs text-foreground/50 group-hover:text-foreground/70 transition-colors leading-relaxed">
-                    <span className="font-mono">git commit -m &quot;cat sat on enter key&quot;</span> — treat with urgency.
-                  </span>
-                </motion.label>
-              )}
-
-              {/* Submit button — swaps to confirmation for 10s then resets */}
-              {submitted ? (
-                <motion.div
-                  key="success"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.3 }}
-                  className="w-full py-4 rounded-2xl text-sm tracking-wide flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: `${ACCENT2}15`,
-                    border: `1px solid ${ACCENT2}40`,
-                  }}
-                >
-                  <span className="font-mono font-semibold" style={{ color: ACCENT2 }}>
-                    HTTP 200: OK
-                  </span>
-                  <span className="text-foreground/50">—</span>
-                  <span className="text-foreground/50 text-xs">
-                    Go touch some grass while I compile a reply 🌿
-                  </span>
-                </motion.div>
-              ) : (
-                <motion.button
-                  key="submit"
-                  type="submit"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full py-4 rounded-2xl font-semibold text-[#0e0e0e] transition-all text-sm tracking-wide"
-                  style={{ backgroundColor: "#f0f0f0" }}
-                >
-                  Submit
-                </motion.button>
-              )}
-            </form>
+            <ContactForm />
           </motion.div>
         </div>
 
@@ -491,20 +359,26 @@ export default function Contact() {
           transition={{ duration: 0.8, delay: 0.3 }}
           className="mt-10 pt-2 border-t border-foreground/5"
         >
-          <div className="flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-foreground/40">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-foreground/60">
             <p>© 2026 Tiffany Lyssa. All rights reserved.</p>
-            <div className="flex gap-4 text-[11px]">
-              <a href="#home" className="hover:text-foreground/70 transition-colors">
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs">
+              <a href="#home" className="hover:text-foreground transition-colors">
                 Home
               </a>
-              <a href="#about" className="hover:text-foreground/70 transition-colors">
+              <a href="#about" className="hover:text-foreground transition-colors">
                 About
               </a>
-              <a href="#projects" className="hover:text-foreground/70 transition-colors">
+              <a href="#projects" className="hover:text-foreground transition-colors">
                 Projects
               </a>
-              <a href="#experience" className="hover:text-foreground/70 transition-colors">
+              <a href="#experience" className="hover:text-foreground transition-colors">
                 Experience
+              </a>
+              <a href="#contact" className="hover:text-foreground transition-colors">
+                Contact
+              </a>
+              <a href={RESUME_URL} download className="font-semibold text-foreground/80 hover:text-foreground transition-colors">
+                Résumé ↓
               </a>
             </div>
           </div>

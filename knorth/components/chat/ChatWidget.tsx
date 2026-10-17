@@ -1,14 +1,24 @@
 "use client";
 // Floating Kniah chat: the pixel cat lives in the bottom-right corner and comments on what the visitor
 // is doing (see useKnoBrain). Hover makes it backflip, a click makes it hop and opens a small chat that
-// streams answers about Tiffany from /api/chat.
+// streams answers about Tiffany from /api/chat. The first question of a visit gets a detour first: Kniah
+// shows what the visitor's browser gave away on page load (ExposureCard), as a nudge to click carefully.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useReducedMotion } from "@/components/useReducedMotionSafe";
 import { ArrowUp, X } from "lucide-react";
 import KnoCat, { type KnoMood } from "./KnoCat";
 import { useKnoBrain } from "./useKnoBrain";
+import ExposureCard from "./ExposureCard";
 
-type Msg = { role: "user" | "assistant"; content: string; error?: boolean };
+type Msg = {
+  role: "user" | "assistant";
+  content: string;
+  error?: boolean;
+  /** the browser-exposure readout; shown in the chat but never sent to the model */
+  kind?: "exposure";
+  played?: boolean;
+};
 
 const GREETING =
   "Hi! I'm Kniah, Tiffany's pixel cat. Ask me what she builds, where she's worked, or how to reach her.";
@@ -52,6 +62,8 @@ export default function ChatWidget() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const exposedRef = useRef(false);
+  const revealRef = useRef<(() => void) | null>(null);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -78,9 +90,22 @@ export default function ChatWidget() {
     const content = text.trim();
     if (!content || streaming) return;
     const history: Msg[] = [...messages.filter((m) => !m.error), { role: "user", content }];
-    setMessages([...history, { role: "assistant", content: "" }]);
     setInput("");
     setStreaming(true);
+
+    if (!exposedRef.current) {
+      // First question: show what the browser gave away, then answer once the readout has landed
+      exposedRef.current = true;
+      setMessages([...history, { role: "assistant", content: "", kind: "exposure" }]);
+      await new Promise<void>((resolve) => {
+        revealRef.current = resolve;
+        setTimeout(resolve, 9000);
+      });
+      revealRef.current = null;
+      setMessages((ms) => [...ms.map((m) => (m.kind ? { ...m, played: true } : m)), { role: "assistant", content: "" }]);
+    } else {
+      setMessages([...history, { role: "assistant", content: "" }]);
+    }
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -91,7 +116,7 @@ export default function ChatWidget() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: history.map(({ role, content }) => ({ role, content })) }),
+        body: JSON.stringify({ messages: history.filter((m) => !m.kind).map(({ role, content }) => ({ role, content })) }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
@@ -146,7 +171,8 @@ export default function ChatWidget() {
   };
 
   const bubbleText = open ? null : hovered ? "Ask me anything" : brain.line;
-  const lastIsEmptyAssistant = streaming && messages[messages.length - 1]?.content === "";
+  const last = messages[messages.length - 1];
+  const lastIsEmptyAssistant = streaming && !last?.kind && last?.content === "";
 
   return (
     <>
@@ -247,7 +273,9 @@ export default function ChatWidget() {
               )}
 
               {messages.map((m, i) =>
-                m.role === "user" ? (
+                m.kind === "exposure" ? (
+                  <ExposureCard key={i} play={!m.played} onRevealed={() => revealRef.current?.()} />
+                ) : m.role === "user" ? (
                   <p key={i} className="kno-msg kno-msg-user">{m.content}</p>
                 ) : i === messages.length - 1 && lastIsEmptyAssistant ? (
                   <div key={i} className="kno-msg kno-msg-bot"><TypingDots /></div>
@@ -296,7 +324,7 @@ export default function ChatWidget() {
                 <ArrowUp size={18} strokeWidth={2.5} />
               </button>
             </form>
-            <p className="px-4 pb-3 -mt-1 text-[11px] text-foreground/40">
+            <p className="px-4 pb-3 -mt-1 text-[11px] text-foreground/60">
               AI answers from Tiffany&apos;s portfolio. They can be wrong, so double-check with her.
             </p>
           </motion.div>

@@ -3,9 +3,9 @@
 // scrolls (rows alternate direction) and leans with scroll velocity. Keys press down on hover.
 import { useRef } from "react";
 import {
-  motion, useReducedMotion, useScroll, useSpring, useTransform, useVelocity,
-  type MotionValue,
+  motion, useScroll, useSpring, useTransform, useVelocity, type MotionValue,
 } from "framer-motion";
+import { useReducedMotion } from "@/components/useReducedMotionSafe";
 import { TbCornerDownLeft } from "react-icons/tb";
 import { skillGroups, type SkillGroup } from "@/data/career";
 import PartHeading from "./PartHeading";
@@ -97,7 +97,7 @@ export default function SkillsSection() {
       <PartHeading
         className="mb-8"
         title={<>What I type <span style={{ color: "var(--color-accent2)" }}>with</span></>}
-        description="Every tool on this keyboard, frontend to firmware to final cut. Hover a key, it clicks."
+        description={<>Every tool on this keyboard, frontend to firmware to final cut.<span className="hidden [@media(hover:hover)]:inline"> Hover a key, it clicks.</span></>}
       />
 
       {reduce ? (
