@@ -1,6 +1,7 @@
 "use client";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 import { Instagram, Linkedin, Github, Twitter, Figma, Facebook } from "lucide-react";
+import ProjectCases from "@/components/ProjectCases";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import TiltedCard from "@/components/designs/TiltedCard";
@@ -237,7 +238,7 @@ function GalleryWithCursor() {
         className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center justify-center shadow-xl border border-black/5"
       >
         <span className="text-[#2d2d2d] font-bold text-xs whitespace-nowrap">
-          Inspect the build
+          Drag to spin
         </span>
       </motion.div>
     </div>
@@ -353,41 +354,38 @@ export default function Hero() {
       <section id="about" className="relative flex flex-col items-center justify-center min-h-screen px-6 max-w-6xl mx-auto w-full">
         {/* Blobs */}
         <div className="absolute pointer-events-none" style={{ top: "-5%", right: "-10%", width: 480, height: 480, borderRadius: "50%", background: "radial-gradient(circle, rgba(251,113,33,0.22) 0%, transparent 70%)", filter: "blur(50px)", zIndex: 0 }} />
-        <div className="absolute pointer-events-none" style={{ bottom: "0%", left: "-12%", width: 440, height: 440, borderRadius: "50%", background: "radial-gradient(circle, rgba(168,85,247,0.22) 0%, transparent 70%)", filter: "blur(48px)", zIndex: 0 }} />
-        <img src="/stickers/7.png" aria-hidden="true" className="pointer-events-none select-none absolute w-28 h-28 object-contain" style={{ rotate: "-10deg", zIndex: 0, top: "6%",    left: "2%" }} />
-        <img src="/stickers/4.png" aria-hidden="true" className="pointer-events-none select-none absolute w-36 h-36 object-contain" style={{ zIndex: 0, top: "35%", right: "-6%", transform: "translateY(-50%) rotate(10deg)" }} />
-        <img src="/stickers/5.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "-18deg", zIndex: 0, top: "50%", left: "-8%", transform: "translateY(-50%) rotate(-18deg)" }} />
-        <img src="/stickers/6.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "22deg",  zIndex: 0, bottom: "6%", left: "47%" }} />
+        <img src="/stickers/7.png" alt="" aria-hidden="true" className="hidden md:block pointer-events-none select-none absolute w-28 h-28 object-contain" style={{ rotate: "-10deg", zIndex: 0, top: "6%",    left: "2%" }} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center w-full">
 
           <div className="flex flex-col justify-center text-left w-full order-2 md:order-1">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
               className="text-4xl md:text-5xl font-medium mb-12 flex flex-wrap gap-2">
-              <span>I&apos;m a</span>
-              <ColorTypewriter strings={["Software Engineer.", "Designer.", "Developer."]} colors={[ACCENT, ACCENT2, ACCENT4]} />
-            </motion.div>
+              <span className="sr-only">I&apos;m a software engineer, designer and developer.</span>
+              <span aria-hidden>I&apos;m a</span>
+              <span aria-hidden><ColorTypewriter strings={["Software Engineer.", "Designer.", "Developer."]} colors={[ACCENT, ACCENT2, ACCENT4]} /></span>
+            </motion.h2>
 
             <div className="space-y-10">
               <div>
                 <h3 className="text-xs uppercase tracking-widest font-bold mb-3" style={{ color: ACCENT }}>Develop</h3>
-                <p className="text-foreground/60 mb-4 max-w-md text-xs leading-relaxed">
+                <p className="text-foreground/70 mb-4 max-w-md text-sm leading-relaxed">
                   I make meaningful and delightful digital products that create an equilibrium between user needs and business goals.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {developSkills.map((s) => (
-                    <span key={s} className="px-3 py-1 rounded-full text-[10px] opacity-80 uppercase tracking-tighter"
+                    <span key={s} className="px-3 py-1 rounded-full text-[11px] text-foreground/85 uppercase tracking-wide"
                       style={{ border: `1px solid ${ACCENT}40`, color: "var(--foreground)" }}>{s}</span>
                   ))}
                 </div>
               </div>
               <div>
                 <h3 className="text-xs uppercase tracking-widest font-bold mb-3" style={{ color: ACCENT2 }}>Create</h3>
-                <p className="text-foreground/60 mb-4 max-w-md text-xs leading-relaxed">
+                <p className="text-foreground/70 mb-4 max-w-md text-sm leading-relaxed">
                   My content creation journey evolved from a side hustle to serving other creators, achieving meaningful visual storytelling.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {createSkills.map((s) => (
-                    <span key={s} className="px-3 py-1 rounded-full text-[10px] opacity-80 uppercase tracking-tighter"
+                    <span key={s} className="px-3 py-1 rounded-full text-[11px] text-foreground/85 uppercase tracking-wide"
                       style={{ border: `1px solid ${ACCENT2}40`, color: "var(--foreground)" }}>{s}</span>
                   ))}
                 </div>
@@ -401,9 +399,9 @@ export default function Hero() {
               containerHeight="600px" containerWidth="100%" imageHeight="500px" imageWidth="400px"
               rotateAmplitude={10} scaleOnHover={1.05} showTooltip={true} displayOverlayContent={true}
               overlayContent={
-                <div className="backdrop-blur-md px-4 py-2 rounded-lg text-white text-[10px]"
+                <div className="backdrop-blur-md px-4 py-2 rounded-lg text-white text-xs font-semibold"
                   style={{ background: `${ACCENT}33`, border: `1px solid ${ACCENT}60` }}>
-                  BASE IN PH
+                  Based in PH
                 </div>
               }
             />
@@ -415,19 +413,17 @@ export default function Hero() {
       <section id="projects" className="relative min-h-screen flex flex-col items-center justify-center py-16">
         {/* Blobs */}
         <div className="absolute pointer-events-none" style={{ top: "5%", left: "-8%", width: 460, height: 460, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%)", filter: "blur(50px)", zIndex: 0 }} />
-        <div className="absolute pointer-events-none" style={{ bottom: "5%", right: "-8%", width: 420, height: 420, borderRadius: "50%", background: "radial-gradient(circle, rgba(168,85,247,0.22) 0%, transparent 70%)", filter: "blur(46px)", zIndex: 0 }} />
-        <img src="/stickers/7.png" aria-hidden="true" className="pointer-events-none select-none absolute w-36 h-36 object-contain" style={{ rotate: "-12deg", zIndex: 0, top: "8%",    left: "5%" }} />
-        <img src="/stickers/1.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "18deg",  zIndex: 0, top: "15%",   right: "8%" }} />
-        <img src="/stickers/4.png" aria-hidden="true" className="pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "8deg",   zIndex: 0, bottom: "10%", left: "45%" }} />
+        <img src="/stickers/1.png" alt="" aria-hidden="true" className="hidden md:block pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "18deg",  zIndex: 0, top: "15%",   right: "8%" }} />
         <div className="text-center mb-0 px-6">
           <h2 className="text-4xl md:text-6xl font-bold">
             Things that <span style={{ color: ACCENT }}>run</span>
           </h2>
-          <p className="text-foreground/50 text-sm mt-4 max-w-lg mx-auto">
+          <p className="text-foreground/70 text-sm mt-4 max-w-lg mx-auto">
             10% inspiration, 90% fixing weird margin bugs. A curated showcase of things I&apos;ve designed, built, and actually shipped.
           </p>
         </div>
         <GalleryWithCursor />
+        <ProjectCases />
       </section>
 
       {/* EXPERIENCE */}
@@ -435,9 +431,8 @@ export default function Hero() {
         {/* Blobs */}
         <div className="absolute pointer-events-none" style={{ top: -160, left: "-20%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(251,113,33,0.10) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
         <div className="absolute pointer-events-none" style={{ bottom: 0, right: "-10%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
-        <img src="/stickers/2.png" aria-hidden="true" className="hidden md:block pointer-events-none select-none absolute w-36 h-36 object-contain" style={{ zIndex: 0, top: 40, right: "8%", rotate: "-8deg" }} />
-        <img src="/stickers/5.png" aria-hidden="true" className="hidden md:block pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ rotate: "14deg",  zIndex: 0, top: "3%",    left: "55%" }} />
-        <img src="/stickers/6.png" aria-hidden="true" className="hidden md:block pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ zIndex: 0, top: 180, left: "-10%", rotate: "-18deg" }} />
+        <img src="/stickers/6.png" alt="" aria-hidden="true" className="hidden md:block pointer-events-none select-none absolute w-32 h-32 object-contain" style={{ zIndex: 0, top: 40, right: "4%", rotate: "-8deg" }} />
+
 
         <div className="relative">
           {/* Content lives in data/services.ts and data/career.ts */}

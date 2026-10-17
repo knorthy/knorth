@@ -5,9 +5,9 @@
 // Reduced motion: a static, slightly scattered pile with no pinning.
 import { useRef, useState, useSyncExternalStore } from "react";
 import {
-  motion, useMotionValueEvent, useReducedMotion, useScroll, useSpring, useTransform,
-  type MotionValue,
+  motion, useMotionValueEvent, useScroll, useSpring, useTransform, type MotionValue,
 } from "framer-motion";
+import { useReducedMotion } from "@/components/useReducedMotionSafe";
 import { TbExternalLink } from "react-icons/tb";
 import { certifications, type Certification } from "@/data/career";
 import PartHeading from "./PartHeading";
@@ -36,7 +36,7 @@ const DEAL_STEP = 0.16; // share of the pinned scroll each card gets
 const DEAL_LEN = 0.11;
 
 function inkOf(color: string) {
-  return `color-mix(in srgb, ${color} 62%, #1b1b1b)`;
+  return `color-mix(in srgb, ${color} 38%, #1b1b1b)`; // dark enough to read on the paper
 }
 
 function Stamp({ cert, scale, opacity }: { cert: Certification; scale?: MotionValue<number>; opacity?: MotionValue<number> }) {

@@ -22,9 +22,11 @@ const SPARKLE = "#ff9fcb";
 const OX = 4;
 const OY = 3;
 
-// Whole ears (tip, base and inner ear), one layer each so they twitch, perk, droop and swivel on their own
-const EAR_LEFT = ["...B...", "..BBB..", ".BBIBB.", "BBIIBBB"]; // grid columns 10-16
-const EAR_RIGHT = ["...B..", "..BBB.", ".BBIBB", "BBBIBB"]; // grid columns 18-23
+// Whole ears (tip, base and inner ear), one layer each so they twitch, perk, droop and swivel on their own.
+// The last two rows are a root that sits hidden behind the head: when an ear tilts or lifts, the root
+// fills the gap, so the ear never comes away from the head.
+const EAR_LEFT = ["...B...", "..BBB..", ".BBIBB.", "BBIIBBB", "BBBBBBB", ".BBBBB."]; // grid columns 10-16
+const EAR_RIGHT = ["...B..", "..BBB.", ".BBIBB", "BBBIBB", "BBBBBB", ".BBBB."]; // grid columns 18-23
 const BODY = [
   ".........BBBBBBBBBBBBBBB.",
   "........BBBBBBBBBBBBBBBB.",

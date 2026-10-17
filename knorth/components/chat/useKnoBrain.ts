@@ -311,9 +311,7 @@ export function useKnoBrain(paused: boolean, chatSessions = 0): { mood: KnoMood;
       const el = e.target as HTMLElement | null;
       if (el?.closest?.("#contact") && el.matches("input, textarea")) comment("typing", { react: THINK, force: true, every: 60000 });
     };
-    const onSubmit = (e: SubmitEvent) => {
-      if ((e.target as HTMLElement | null)?.closest?.("#contact")) comment("submit", { react: FLIP, force: true, every: 5000 });
-    };
+    const onSent = () => comment("submit", { react: FLIP, force: true, every: 5000 }); // only after a confirmed send
 
     // ── Reading, copying, poking ──
     let selT: ReturnType<typeof setTimeout> | undefined;
@@ -378,7 +376,7 @@ export function useKnoBrain(paused: boolean, chatSessions = 0): { mood: KnoMood;
     document.addEventListener("pointerdown", onPointerDown, opts);
     document.addEventListener("click", onClick);
     document.addEventListener("focusin", onFocusIn);
-    document.addEventListener("submit", onSubmit);
+    window.addEventListener("kniah:contact-sent", onSent);
     document.addEventListener("selectionchange", onSelection);
     document.addEventListener("copy", onCopy);
     document.addEventListener("dblclick", onDblClick);
@@ -398,7 +396,7 @@ export function useKnoBrain(paused: boolean, chatSessions = 0): { mood: KnoMood;
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("click", onClick);
       document.removeEventListener("focusin", onFocusIn);
-      document.removeEventListener("submit", onSubmit);
+      window.removeEventListener("kniah:contact-sent", onSent);
       document.removeEventListener("selectionchange", onSelection);
       document.removeEventListener("copy", onCopy);
       document.removeEventListener("dblclick", onDblClick);

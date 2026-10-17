@@ -6,9 +6,9 @@
 // divider uncovers the next one, looping. Wheel items and "pairs with" links jump.
 import { useEffect, useRef, useState } from "react";
 import {
-  AnimatePresence, animate, motion, useMotionTemplate, useMotionValue, useMotionValueEvent,
-  useReducedMotion, useScroll, useTransform,
+  AnimatePresence, animate, motion, useMotionTemplate, useMotionValue, useMotionValueEvent, useScroll, useTransform,
 } from "framer-motion";
+import { useReducedMotion } from "@/components/useReducedMotionSafe";
 import { TbArrowsHorizontal, TbPhoto } from "react-icons/tb";
 import { services, type Service } from "@/data/services";
 import { ACCENT3 } from "@/data/career";
@@ -47,7 +47,7 @@ function Wheel({ active, onPick, axis }: { active: number; onPick: (i: number) =
               animate={{
                 [axis]: off * (vertical ? 36 : 150),
                 scale: Math.max(0.62, 1 - dist * 0.11),
-                opacity: dist > 4 ? 0 : Math.max(0.25, 1 - dist * 0.2),
+                opacity: dist > 4 ? 0 : Math.max(0.42, 1 - dist * 0.15),
               }}
               transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 30 }}
               style={{ transformOrigin: vertical ? "left center" : "center center" }}
@@ -99,12 +99,7 @@ function TypedTarget({ service }: { service: Service }) {
 function Detail({ service, onPick }: { service: Service; onPick: (i: number) => void }) {
   const reduce = useReducedMotion();
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={service.slug}
-        exit={reduce ? { opacity: 0 } : { opacity: 0, y: -10, filter: "blur(4px)" }}
-        transition={{ duration: 0.16, ease: "easeIn" }}
-      >
+    <motion.div key={service.slug}>
         <motion.p
           className="font-mono text-xs uppercase tracking-[0.25em] mb-3 md:mb-5"
           style={{ color: service.color }}
@@ -146,8 +141,7 @@ function Detail({ service, onPick }: { service: Service; onPick: (i: number) => 
             );
           })}
         </motion.p>
-      </motion.div>
-    </AnimatePresence>
+    </motion.div>
   );
 }
 

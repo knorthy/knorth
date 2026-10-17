@@ -15,9 +15,6 @@
   transform-origin: 8px 13.5px;
   animation: kno-tail 1.7s ease-in-out infinite alternate;
 }
-.kno .kno-ears {
-  transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1);
-}
 .kno .kno-eyes {
   transition: transform 140ms ease-out;
 }
@@ -36,9 +33,6 @@
   transform-box: fill-box;
   transform-origin: center;
   animation: kno-twinkle 2.4s ease-in-out infinite;
-}
-.kno-perk .kno .kno-ears {
-  transform: translateY(-0.7px);
 }
 
 /* idle: gentle bob */
@@ -258,7 +252,8 @@
 /* ── Ears: each one moves on its own ─────────────────────────────────────── */
 .kno .kno-ear {
   transform-box: fill-box;
-  transform-origin: 50% 100%;
+  /* pivot on the visible base (row 4 of 6); the two rows below it hide behind the head */
+  transform-origin: 50% 66.667%;
   transition: transform 260ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 /* idle: an occasional twitch, out of step between the two ears */
@@ -357,4 +352,29 @@
   .kno .kno-orbit {
     animation: none;
   }
+}
+
+/* ── "What your browser gave away" readout (ExposureCard) ────────────────── */
+.kno-exposure {
+  border: 1px solid color-mix(in srgb, #ff7eb9 22%, transparent);
+  border-radius: 0.9rem;
+  background: #0d0d0d;
+  overflow: hidden;
+}
+.kno-exposure-row {
+  display: grid;
+  grid-template-columns: 5.25rem minmax(0, 1fr);
+  gap: 0.6rem;
+  align-items: start;
+}
+.kno-exposure-print {
+  background: color-mix(in srgb, #ff7eb9 9%, #121212);
+  border: 1px solid color-mix(in srgb, #ff7eb9 30%, transparent);
+}
+.kno-exposure-in {
+  animation: kno-exposure-in 320ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+@keyframes kno-exposure-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
 }
