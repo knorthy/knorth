@@ -19,6 +19,8 @@ const SERVER_ERRORS: Record<string, string> = {
   not_configured: "The form isn't connected to an inbox yet, so this didn't send.",
   rate_limited: "That's a lot of messages in a short time. Wait a few minutes and try again.",
   send_failed: "The message didn't go through on my end.",
+  busy: "The inbox has had a lot of mail today. Please try again tomorrow.",
+  spam: "This looks like spam to the filter. Try fewer links, or rephrase.",
   network: "Couldn't reach the server. Check your connection and try again.",
   invalid: "A field needs fixing first.",
 };
@@ -43,6 +45,8 @@ export default function ContactForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [urgent, setUrgent] = useState(false);
   const [company, setCompany] = useState(""); // honeypot
+  // When the form appeared: bots submit within a second or two, people don't
+  const [openedAt] = useState(() => Date.now());
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
   const set = (key: keyof Fields) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -67,7 +71,7 @@ export default function ContactForm() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...fields, urgent, company }),
+        body: JSON.stringify({ ...fields, urgent, company, elapsed: Date.now() - openedAt }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.ok) {
