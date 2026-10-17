@@ -10,7 +10,7 @@ import {
 } from "framer-motion";
 import { useReducedMotion } from "@/components/useReducedMotionSafe";
 import { useIsMobile } from "@/components/useIsMobile";
-import { TbArrowsHorizontal, TbPhoto } from "react-icons/tb";
+import { TbArrowsHorizontal, TbPhoto, TbPlayerPauseFilled, TbPlayerPlayFilled, TbVolume, TbVolumeOff } from "react-icons/tb";
 import { services, type Service } from "@/data/services";
 import { ACCENT3 } from "@/data/career";
 import { EASE_OUT } from "./motion";
@@ -154,7 +154,8 @@ function Detail({ service, onPick }: { service: Service; onPick: (i: number) => 
 const REST_R = 93;
 const REST_L = 7;
 
-type Slide = { src?: string; caption: string; variant: number };
+type Slide = { src?: string; poster?: string; start?: number; caption: string; variant: number };
+const isVideo = (src?: string) => !!src && /\.(mp4|webm|mov)$/i.test(src);
 
 function slidesFor(service: Service): Slide[] {
   if (service.gallery?.length) return service.gallery.map((g, i) => ({ ...g, variant: i }));
@@ -212,9 +213,104 @@ function Placeholder({ service, variant, total }: { service: Service; variant: n
   );
 }
 
-function SlideLayer({ service, slide, total }: { service: Service; slide: Slide; total: number }) {
+// Every piece is shown twice: once filling the whole frame as the background, and once whole on top
+// (posters are square, videos are 16:9), so nothing gets cropped. The background is only lightly
+// softened and dimmed, enough for the piece on top to stand out while staying the same picture.
+const FILL = "absolute inset-0 w-full h-full scale-105 blur-[4px] brightness-[0.55]";
+const FIT = "absolute inset-0 w-full h-full object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.65)]";
+
+function Backdrop({ src }: { src: string }) {
+  return <img src={src} alt="" aria-hidden draggable={false} className={`${FILL} object-cover`} />;
+}
+
+// Plays muted on loop only while it's the visible slide. The buttons sit bottom-centre, clear of the slivers
+// that peek in at either edge, and they don't start a sweep.
+function VideoSlide({ slide, live }: { slide: Slide; live: boolean }) {
+  const reduce = useReducedMotion();
+  const ref = useRef<HTMLVideoElement>(null);
+  const fillRef = useRef<HTMLCanvasElement>(null);
+  const [paused, setPaused] = useState(reduce);
+  const [muted, setMuted] = useState(true);
+
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    if (live && !paused) v.play().catch(() => setPaused(true));
+    else v.pause();
+  }, [live, paused]);
+
+  // The background is the same video, frame for frame: each frame is copied onto a small canvas that
+  // covers the panel (cheap at this size, and the softening hides the low resolution). When paused, the
+  // last frame stays put.
+  useEffect(() => {
+    const v = ref.current;
+    const c = fillRef.current;
+    const ctx = c?.getContext("2d");
+    if (!live || paused || !v || !c || !ctx) return;
+    c.width = 192;
+    c.height = Math.round((192 * c.clientHeight) / Math.max(1, c.clientWidth)) || 108;
+    let raf = 0;
+    const draw = () => {
+      if (v.readyState >= 2 && v.videoWidth) {
+        const k = Math.max(c.width / v.videoWidth, c.height / v.videoHeight);
+        const w = v.videoWidth * k;
+        const h = v.videoHeight * k;
+        ctx.drawImage(v, (c.width - w) / 2, (c.height - h) / 2, w, h);
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, [live, paused]);
+
+  const stop = (e: React.PointerEvent) => e.stopPropagation();
+  const btn =
+    "grid place-items-center w-11 h-11 md:w-9 md:h-9 rounded-full bg-black/65 backdrop-blur-sm text-foreground/90 hover:bg-black/80 transition-colors";
+
+  return (
+    <>
+      {slide.poster && <Backdrop src={slide.poster} />}
+      {live && <canvas ref={fillRef} aria-hidden className={FILL} />}
+      <video
+        ref={ref}
+        src={live ? `${slide.src}${slide.start ? `#t=${slide.start}` : ""}` : undefined}
+        poster={slide.poster}
+        muted={muted}
+        loop
+        playsInline
+        preload="metadata"
+        aria-label={slide.caption}
+        className={FIT}
+      />
+      {live && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2" onPointerDown={stop} onPointerUp={stop}>
+          <button type="button" className={btn} onClick={() => setPaused((p) => !p)} aria-label={paused ? `Play ${slide.caption}` : `Pause ${slide.caption}`}>
+            {paused ? <TbPlayerPlayFilled aria-hidden className="w-4 h-4" /> : <TbPlayerPauseFilled aria-hidden className="w-4 h-4" />}
+          </button>
+          <button
+            type="button"
+            className={btn}
+            onClick={() => { setMuted((m) => !m); setPaused(false); }}
+            aria-label={muted ? "Turn sound on" : "Turn sound off"}
+            aria-pressed={!muted}
+          >
+            {muted ? <TbVolumeOff aria-hidden className="w-4 h-4" /> : <TbVolume aria-hidden className="w-4 h-4" />}
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+function SlideLayer({ service, slide, total, live = false }: { service: Service; slide: Slide; total: number; live?: boolean }) {
+  if (isVideo(slide.src)) return <VideoSlide key={slide.src} slide={slide} live={live} />;
   if (slide.src) {
-    return <img src={slide.src} alt={slide.caption} className="absolute inset-0 w-full h-full object-cover" draggable={false} />;
+    return (
+      <>
+        <Backdrop src={slide.src} />
+        <img src={slide.src} alt={slide.caption} className={FIT} draggable={false} />
+      </>
+    );
   }
   return <Placeholder service={service} variant={slide.variant} total={total} />;
 }
@@ -224,6 +320,8 @@ function Gallery({ service }: { service: Service }) {
   const ref = useRef<HTMLDivElement>(null);
   const slides = slidesFor(service);
   const total = slides.length;
+  // One piece only: show it as is, with nothing to sweep to
+  const single = total === 1;
 
   const [base, setBase] = useState(0);
   const [side, setSide] = useState<"right" | "left">("right");
@@ -283,10 +381,10 @@ function Gallery({ service }: { service: Service }) {
     <figure>
       <div
         ref={ref}
-        className="relative aspect-[16/9] md:aspect-[16/11] rounded-2xl overflow-hidden border border-white/10 select-none touch-pan-y cursor-ew-resize"
+        className={`relative aspect-[16/9] md:aspect-[16/11] rounded-2xl overflow-hidden border border-white/10 select-none touch-pan-y ${single ? "" : "cursor-ew-resize"}`}
         style={{ boxShadow: "0 30px 60px -24px rgba(0,0,0,0.8)" }}
         onPointerDown={(e) => {
-          if (busy.current) return;
+          if (single || busy.current) return;
           pos.stop();
           drag.current = { x: e.clientX, moved: false };
           e.currentTarget.setPointerCapture(e.pointerId);
@@ -318,32 +416,38 @@ function Gallery({ service }: { service: Service }) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <SlideLayer service={service} slide={slides[base]} total={total} />
-            <motion.div className="absolute inset-0" style={{ clipPath: clip }}>
-              <SlideLayer service={service} slide={slides[incoming]} total={total} />
-            </motion.div>
+            <SlideLayer key={base} service={service} slide={slides[base]} total={total} live />
+            {!single && (
+              <motion.div className="absolute inset-0" style={{ clipPath: clip }}>
+                <SlideLayer key={incoming} service={service} slide={slides[incoming]} total={total} />
+              </motion.div>
+            )}
           </motion.div>
         </AnimatePresence>
 
-        <motion.span
-          className="absolute top-3 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-black/60 text-[11px] text-foreground/85 whitespace-nowrap pointer-events-none"
-          animate={{ opacity: touched ? 0 : 1 }}
-        >
-          drag the line
-        </motion.span>
+        {!single && (
+          <>
+            <motion.span
+              className="absolute top-3 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-black/60 text-[11px] text-foreground/85 whitespace-nowrap pointer-events-none"
+              animate={{ opacity: touched ? 0 : 1 }}
+            >
+              drag the line
+            </motion.span>
 
-        {/* divider + handle */}
-        <motion.div className="absolute inset-y-0 w-0.5 -ml-px pointer-events-none" style={{ left, background: service.color }} />
-        <motion.button
-          type="button"
-          aria-label={`Show next ${service.name} image (${incoming + 1} of ${total})`}
-          // pointer clicks are handled by the panel; this covers Enter/Space from the keyboard
-          onClick={(e) => { if (e.detail === 0) sweep(); }}
-          className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 md:w-9 md:h-9 rounded-full grid place-items-center text-[#0e0e0e]"
-          style={{ left, background: service.color, boxShadow: "0 6px 16px -4px rgba(0,0,0,0.6)" }}
-        >
-          <TbArrowsHorizontal aria-hidden className="w-4 h-4" />
-        </motion.button>
+            {/* divider + handle */}
+            <motion.div className="absolute inset-y-0 w-0.5 -ml-px pointer-events-none" style={{ left, background: service.color }} />
+            <motion.button
+              type="button"
+              aria-label={`Show next ${service.name} image (${incoming + 1} of ${total})`}
+              // pointer clicks are handled by the panel; this covers Enter/Space from the keyboard
+              onClick={(e) => { if (e.detail === 0) sweep(); }}
+              className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 md:w-9 md:h-9 rounded-full grid place-items-center text-[#0e0e0e]"
+              style={{ left, background: service.color, boxShadow: "0 6px 16px -4px rgba(0,0,0,0.6)" }}
+            >
+              <TbArrowsHorizontal aria-hidden className="w-4 h-4" />
+            </motion.button>
+          </>
+        )}
       </div>
       <figcaption className="mt-3 md:mt-4 flex items-center justify-between gap-4 font-mono text-xs text-foreground/50">
         <AnimatePresence mode="wait" initial={false}>
@@ -358,9 +462,11 @@ function Gallery({ service }: { service: Service }) {
             {slides[base].caption}
           </motion.span>
         </AnimatePresence>
-        <span className="tabular-nums shrink-0">
-          <span style={{ color: service.color }}>{base + 1}</span> / {total}
-        </span>
+        {!single && (
+          <span className="tabular-nums shrink-0">
+            <span style={{ color: service.color }}>{base + 1}</span> / {total}
+          </span>
+        )}
       </figcaption>
     </figure>
   );

@@ -1,12 +1,17 @@
 "use client";
 // Top bar. Desktop: pixel logo · centred section links · Resume. Below md the section links move to a
 // dock along the bottom edge, where a thumb can reach them; Kniah sits at its right end.
-import React, { useEffect, useState } from 'react';
+// The top bar gets out of the way: it slides up when scrolling down, comes back when scrolling up or
+// when the pointer heads for the top, and tucks away after a few idle seconds. In the Home section it
+// always stays. The logo and the phone dock never hide.
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { Briefcase, FolderOpen, Home, Mail, User, type LucideIcon } from 'lucide-react';
 import { usePageTransition } from '@/components/PageTransition';
 import PixelLogo from '@/components/PixelLogo';
+import './navbar.css';
+import { RESUME_URL } from '@/lib/site';
 
 const LINKS: { id: string; label: string; short: string; color: string; Icon: LucideIcon }[] = [
   { id: 'home', label: 'Home', short: 'Home', color: '#f72585', Icon: Home },
@@ -46,8 +51,65 @@ function useActiveSection() {
   return active;
 }
 
+const IDLE_MS = 2800;
+const TOP_ZONE = 110; // px: pointer this close to the top brings the bar back
+
+function useBarHidden(atHome: boolean) {
+  const [hidden, setHidden] = useState(false);
+  const holdRef = useRef(false); // pointer over the bar, or keyboard focus inside it
+  const homeRef = useRef(atHome);
+  useEffect(() => {
+    homeRef.current = atHome;
+  }, [atHome]);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let idle: ReturnType<typeof setTimeout>;
+    const show = () => setHidden(false);
+    const hide = () => {
+      if (!homeRef.current && !holdRef.current) setHidden(true);
+    };
+    const armIdle = () => {
+      clearTimeout(idle);
+      idle = setTimeout(hide, IDLE_MS);
+    };
+    const onScroll = () => {
+      const y = window.scrollY;
+      const dy = y - lastY;
+      if (Math.abs(dy) < 6) return;
+      lastY = y;
+      if (dy > 0) hide();
+      else show();
+      armIdle();
+    };
+    const onPointer = (e: PointerEvent) => {
+      if (e.clientY < TOP_ZONE) show();
+      armIdle();
+    };
+    const onKey = () => armIdle();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('pointermove', onPointer, { passive: true });
+    window.addEventListener('keydown', onKey);
+    armIdle();
+    return () => {
+      clearTimeout(idle);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('pointermove', onPointer);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, []);
+
+  const hold = (on: boolean) => {
+    holdRef.current = on;
+    if (on) setHidden(false);
+  };
+  // Home always shows the bar, whatever happened before
+  return { hidden: hidden && !atHome, hold };
+}
+
 export default function Navbar() {
   const active = useActiveSection();
+  const { hidden, hold } = useBarHidden(active === 'home');
   const [resumeHovered, setResumeHovered] = useState(false);
   const pathname = usePathname();
   const { navigate } = usePageTransition();
@@ -65,17 +127,30 @@ export default function Navbar() {
       : { color: 'color-mix(in srgb, var(--foreground) 70%, transparent)' };
 
   return (
-    <nav aria-label="Main" className="fixed top-4 md:top-6 left-0 right-0 z-50 flex items-center justify-between px-4 md:px-6">
-      {/* Phones: a fade behind the bar so scrolled content doesn't collide with the logo */}
+    <nav aria-label="Main">
+      {/* The logo stays put; it's its own fixed layer so it doesn't slide away with the bar */}
+      <div className="fixed top-4 md:top-6 left-4 md:left-6 z-[51] flex items-center h-10">
+        {/* Phones: a fade behind the logo so scrolled content doesn't collide with it */}
+        <div
+          aria-hidden
+          className="md:hidden fixed inset-x-0 top-0 h-24 -z-10 pointer-events-none"
+          style={{ background: 'linear-gradient(to bottom, var(--background) 35%, color-mix(in srgb, var(--background) 70%, transparent) 65%, transparent)' }}
+        />
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- custom transition handles navigation */}
+        <a href="/home" onClick={handleLogoClick} aria-label="Tiffany Lyssa, back to top" className="block py-1">
+          <PixelLogo cell={3} />
+        </a>
+      </div>
+
+      {/* Links and Resume: their own fixed layer, so sliding them away moves neither the logo nor the dock */}
       <div
-        aria-hidden
-        className="md:hidden absolute inset-x-0 -top-4 h-24 -z-10 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, var(--background) 35%, color-mix(in srgb, var(--background) 70%, transparent) 65%, transparent)' }}
-      />
-      {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- custom transition handles navigation */}
-      <a href="/home" onClick={handleLogoClick} aria-label="Tiffany Lyssa, back to top" className="block py-1">
-        <PixelLogo cell={3} />
-      </a>
+        data-hidden={hidden}
+        className="nav-bar fixed top-4 md:top-6 left-0 right-0 z-50 flex items-center justify-end px-4 md:px-6 pointer-events-none [&>*]:pointer-events-auto"
+        onPointerEnter={() => hold(true)}
+        onPointerLeave={() => hold(false)}
+        onFocus={() => hold(true)}
+        onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) hold(false); }}
+      >
 
       {/* Desktop links */}
       <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-8 px-10 py-3 shadow-xl rounded-[20px] backdrop-blur-md bg-white/5 border border-white/10">
@@ -98,7 +173,9 @@ export default function Navbar() {
       <div className="flex items-center gap-2">
         {/* Resume / Hire Me button */}
         <motion.a
-          href="#"
+          href={RESUME_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           onMouseEnter={() => setResumeHovered(true)}
           onMouseLeave={() => setResumeHovered(false)}
           whileHover={{ scale: 1.05 }}
@@ -120,6 +197,7 @@ export default function Navbar() {
         >
           {resumeHovered ? 'Hire Me' : 'Resume'}
         </motion.a>
+      </div>
       </div>
 
       {/* Mobile dock: section links within thumb reach. It stops short of the right edge to leave

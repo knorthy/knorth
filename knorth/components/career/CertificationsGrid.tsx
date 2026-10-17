@@ -15,21 +15,21 @@ import PartHeading from "./PartHeading";
 
 // Where each card lands on the desk (centre point, % of desk) and how it sits
 const SPOTS = [
-  { x: 27, y: 32, r: -7 },
-  { x: 52, y: 25, r: 4 },
-  { x: 75, y: 36, r: -3 },
-  { x: 36, y: 70, r: 6 },
-  { x: 65, y: 68, r: -5 },
-  { x: 50, y: 50, r: 2 },
+  { x: 23, y: 31, r: -7 },
+  { x: 50, y: 25, r: 4 },
+  { x: 77, y: 33, r: -3 },
+  { x: 25, y: 70, r: 5 },
+  { x: 52, y: 73, r: -4 },
+  { x: 78, y: 68, r: 3 },
 ];
 // Phones: a tall, narrow desk, so the pile zig-zags down instead of spreading out
 const SPOTS_NARROW = [
-  { x: 39, y: 12, r: -6 },
-  { x: 61, y: 31, r: 5 },
-  { x: 40, y: 50, r: -3 },
-  { x: 60, y: 69, r: 6 },
-  { x: 46, y: 88, r: -4 },
-  { x: 50, y: 50, r: 2 },
+  { x: 39, y: 11, r: -6 },
+  { x: 61, y: 27, r: 5 },
+  { x: 40, y: 43, r: -3 },
+  { x: 60, y: 59, r: 6 },
+  { x: 41, y: 75, r: -4 },
+  { x: 58, y: 90, r: 3 },
 ];
 
 const DEAL_START = 0.06;
@@ -168,7 +168,7 @@ function Heading({ landed, hint }: { landed?: number; hint?: string }) {
     <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
       <PartHeading
         title={<>The paper <span style={{ color: "var(--color-accent4)" }}>trail</span></>}
-        description={<>Certificates from Cisco and DataCamp, plus a hackathon win.{hint && <> Scroll to deal them out, then {hint}.</>}</>}
+        description={<>A TESDA NC II in Mechatronics Servicing, certificates from Cisco and DataCamp, plus a hackathon win.{hint && <> Scroll to deal them out, then {hint}.</>}</>}
       />
       {landed !== undefined && (
         <p className="text-sm text-foreground/55 tabular-nums pb-1">
