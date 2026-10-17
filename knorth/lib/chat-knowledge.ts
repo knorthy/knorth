@@ -2,13 +2,15 @@
 // anything the portfolio doesn't already show. Edit data/career.ts and data/services.ts, not this.
 import { jobs, affiliations, certifications, skillGroups } from "@/data/career";
 import { services } from "@/data/services";
+import { projects } from "@/data/projects";
 
 const PROFILE = `
-Name: Tiffany Lyssa. Handle: knorth / kno_orth. Based in the Philippines.
+Name: Tiffany Lyssa Palaganas (goes by Tiffany Lyssa). Handle: knorth / kno_orth. Based in Manila, Philippines.
+Education: BS Computer Science, Cavite State University.
 Software engineer, designer and developer: builds and designs web and mobile software, and also does embedded / IoT hardware.
-Award: AI in UX Hackathon champion.
+Award: Champion, KadaKareer × Home Credit AI in UX for FinTech Hackathon (December 2025), as UI/UX designer and front-end developer.
 Links: LinkedIn linkedin.com/in/tiffany-lyssa-4b210b281, GitHub github.com/knorthy, X x.com/kno_orth.
-Contact: the contact form at the bottom of the site (#contact), or LinkedIn. A resume is available from the Resume button in the top bar.
+Contact: the contact form at the bottom of the site (#contact), or LinkedIn. Her resume (PDF) opens from the Resume button in the top bar and downloads from the contact section.
 `.trim();
 
 function careerFacts(): string {
@@ -20,11 +22,16 @@ function careerFacts(): string {
     .join("\n");
   const certs = certifications.map((c) => `- ${c.name} (${c.issuer})`).join("\n");
   const stack = skillGroups.map((g) => `- ${g.category}: ${g.skills.map((s) => s.name).join(", ")}`).join("\n");
+  const builds = projects
+    .filter((p) => p.summary)
+    .map((p) => `- ${p.name}${p.role ? ` (her role: ${p.role})` : ""}: ${p.summary}`)
+    .join("\n");
   const offers = services.map((s) => `- ${s.name} (${s.category}): ${s.description}`).join("\n");
 
   return [
     `## Profile\n${PROFILE}`,
     `## Work experience\n${work}`,
+    `## Projects\n${builds}`,
     `## Leadership and volunteering\n${orgs}`,
     `## Certifications\n${certs}`,
     `## Tech stack\n${stack}`,
