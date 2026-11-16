@@ -6,6 +6,8 @@
 // shooting star drift behind. Everything else is listed by name below.
 import { useLayoutEffect, useRef, useState } from "react";
 import { motion, useScroll, useSpring, useTransform, type MotionValue } from "framer-motion";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { useReducedMotion } from "@/components/useReducedMotionSafe";
 import { projects, type Project } from "@/data/projects";
 import PartHeading from "@/components/career/PartHeading";
@@ -120,7 +122,7 @@ function CaseFile({ p, index, count, layout, timing, progress, still }: {
 export default function ProjectCases() {
   const reduce = useReducedMotion();
   const featured = FEATURED_ORDER.map((slug) => projects.find((p) => p.slug === slug)).filter((p): p is Project => !!p);
-  const rest = projects.filter((p) => !FEATURED_ORDER.includes(p.slug));
+  const rest = projects.filter((p) => !p.summary); // named in the gallery, no write-up yet
 
   const blockRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
@@ -198,13 +200,25 @@ export default function ProjectCases() {
           </div>
         </div>
 
+      </div>
+
+      {/* The files above are teasers; /work has every one in full. This sits outside the scroll-timed
+          block so its height doesn't shift the folder animation. */}
+      <div className="relative w-full max-w-6xl mx-auto px-6">
+        <Link
+          href="/work"
+          className="group mt-10 inline-flex items-center gap-2 py-2 text-base font-semibold underline underline-offset-4 decoration-1 decoration-[var(--color-accent)] hover:decoration-2"
+        >
+          Open every case file
+          <ArrowRight size={17} aria-hidden className="transition-transform duration-200 ease-out group-hover:translate-x-1" />
+        </Link>
         {rest.length > 0 && (
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true, amount: 0.6 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="relative mt-10 text-sm text-foreground/65"
+            className="mt-3 text-sm text-foreground/65"
           >
             Also in the gallery:{" "}
             {rest.map((p, i) => (

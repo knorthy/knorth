@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Tiffany Lyssa",
-  description: "Personal portfolio of Tiffany Lyssa",
+  description: "Tiffany Lyssa is a software engineer and designer in Manila who builds web, mobile and embedded projects. Work, experience, resume and contact.",
 };
 
 export default function RootLayout({

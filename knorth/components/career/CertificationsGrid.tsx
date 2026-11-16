@@ -2,37 +2,26 @@
 // The paper trail: the section pins while scrolling deals each certificate onto a desk. A card
 // drops in from above the viewer, thumps down at its spot, then gets an ink stamp.
 // Landed cards can be dragged around (fine pointers) and tapping one pulls it to the top of the pile.
-// Reduced motion: a static, slightly scattered pile with no pinning.
+// Phones and reduced motion: a static, slightly tilted list with no pinning, so every title is readable.
 import { useRef, useState, useSyncExternalStore } from "react";
 import {
   motion, useMotionValueEvent, useScroll, useSpring, useTransform, type MotionValue,
 } from "framer-motion";
 import { useReducedMotion } from "@/components/useReducedMotionSafe";
-import { useIsMobile } from "@/components/useIsMobile";
 import { TbExternalLink } from "react-icons/tb";
 import { certifications, type Certification } from "@/data/career";
 import PartHeading from "./PartHeading";
 
 // Where each card lands on the desk (centre point, % of desk) and how it sits
 const SPOTS = [
-  { x: 23, y: 31, r: -7 },
+  { x: 19, y: 31, r: -7 },
   { x: 50, y: 25, r: 4 },
-  { x: 77, y: 33, r: -3 },
-  { x: 25, y: 70, r: 5 },
-  { x: 52, y: 73, r: -4 },
-  { x: 78, y: 68, r: 3 },
+  { x: 81, y: 33, r: -3 },
+  { x: 20, y: 70, r: 5 },
+  { x: 50, y: 73, r: -4 },
+  { x: 80, y: 68, r: 3 },
 ];
-// Phones: a tall, narrow desk, so the pile zig-zags down instead of spreading out
-const SPOTS_NARROW = [
-  { x: 39, y: 11, r: -6 },
-  { x: 61, y: 27, r: 5 },
-  { x: 40, y: 43, r: -3 },
-  { x: 60, y: 59, r: 6 },
-  { x: 41, y: 75, r: -4 },
-  { x: 58, y: 90, r: 3 },
-];
-
-const DEAL_START = 0.06;
+const DEAL_START = 0.02; // the first card is on its way almost as soon as the desk pins
 const DEAL_STEP = 0.16; // share of the pinned scroll each card gets
 const DEAL_LEN = 0.11;
 
@@ -76,7 +65,7 @@ function CertCard({ cert, stampScale, stampOpacity }: {
       {isChampion && (
         <img src="/ribbon-cutout.png" alt="" aria-hidden className="pointer-events-none select-none absolute -right-[9%] -top-[20%] w-[36%] rotate-[16deg] -scale-x-100" />
       )}
-      <p className="mt-[4%] flex items-center gap-1.5 text-[clamp(9px,1vw,12px)] font-semibold uppercase tracking-[0.14em]" style={{ color: inkOf(cert.color) }}>
+      <p className="mt-[4%] flex items-center gap-1.5 text-[clamp(11px,1vw,12px)] font-semibold uppercase tracking-[0.12em]" style={{ color: inkOf(cert.color) }}>
         <cert.icon aria-hidden className="w-[1.2em] h-[1.2em]" />
         {cert.issuer}
       </p>
@@ -84,7 +73,7 @@ function CertCard({ cert, stampScale, stampOpacity }: {
         {title}
       </h4>
       {honour && (
-        <p className="mt-auto text-[clamp(11px,1.1vw,13px)] font-semibold" style={{ color: inkOf(cert.color) }}>{honour}</p>
+        <p className="mt-auto text-[clamp(12px,1.1vw,13px)] font-semibold" style={{ color: inkOf(cert.color) }}>{honour}</p>
       )}
       {cert.credentialUrl && (
         <a
@@ -92,7 +81,7 @@ function CertCard({ cert, stampScale, stampOpacity }: {
           target="_blank"
           rel="noopener noreferrer"
           onPointerDownCapture={(e) => e.stopPropagation()}
-          className="mt-auto pt-[4%] self-start inline-flex items-center gap-1 text-[clamp(10px,1vw,12px)] font-semibold underline underline-offset-4 decoration-1 hover:decoration-2"
+          className="mt-auto pt-[4%] self-start inline-flex items-center gap-1 text-[clamp(11px,1vw,12px)] font-semibold underline underline-offset-4 decoration-1 hover:decoration-2"
         >
           View credential <TbExternalLink aria-hidden className="w-[1.1em] h-[1.1em]" />
         </a>
@@ -102,11 +91,13 @@ function CertCard({ cert, stampScale, stampOpacity }: {
   );
 }
 
-function DealtCard({ cert, index, progress, z, onFront, deskRef, canDrag, narrow }: {
+function DealtCard({ cert, index, progress, z, onFront, deskRef, canDrag }: {
   cert: Certification; index: number; progress: MotionValue<number>; z: number;
-  onFront: () => void; deskRef: React.RefObject<HTMLDivElement | null>; canDrag: boolean; narrow: boolean;
+  onFront: () => void; deskRef: React.RefObject<HTMLDivElement | null>;
+  /** only cards that have landed can be dragged: a card still in the air would be measured mid-flight */
+  canDrag: boolean;
 }) {
-  const spot = (narrow ? SPOTS_NARROW : SPOTS)[index % SPOTS.length];
+  const spot = SPOTS[index % SPOTS.length];
   const start = DEAL_START + index * DEAL_STEP;
   const raw = useTransform(progress, [start, start + DEAL_LEN], [0, 1], { clamp: true });
   // A light spring on top of the scrubbed value gives the landing a small thump past its rest point
@@ -128,7 +119,7 @@ function DealtCard({ cert, index, progress, z, onFront, deskRef, canDrag, narrow
 
   return (
     <li
-      className="absolute w-[clamp(176px,52vw,214px)] md:w-[clamp(220px,26vw,330px)]"
+      className="absolute w-[clamp(220px,24vw,300px)]"
       style={{ left: `${spot.x}%`, top: `${spot.y}%`, transform: "translate(-50%, -50%)", zIndex: z }}
     >
       <motion.div style={{ y, scale, rotate, opacity, filter }}>
@@ -165,15 +156,19 @@ function useMedia(query: string) {
 
 function Heading({ landed, hint }: { landed?: number; hint?: string }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+    // above the desk, so a card still in the air never covers the skip link
+    <div className="relative z-10 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
       <PartHeading
         title={<>The paper <span style={{ color: "var(--color-accent4)" }}>trail</span></>}
         description={<>A TESDA NC II in Mechatronics Servicing, certificates from Cisco and DataCamp, plus a hackathon win.{hint && <> Scroll to deal them out, then {hint}.</>}</>}
       />
       {landed !== undefined && (
-        <p className="text-sm text-foreground/55 tabular-nums pb-1">
-          <span className="font-bold text-foreground">{landed}</span> / {certifications.length} on the desk
-        </p>
+        <div className="flex items-center gap-5 pb-1">
+          <a href="#contact" className="py-3 -my-3 text-xs tracking-wide text-foreground/65 hover:text-foreground transition-colors">Skip to contact</a>
+          <p className="text-sm text-foreground/60 tabular-nums">
+            <span className="font-bold text-foreground">{landed}</span> / {certifications.length} on the desk
+          </p>
+        </div>
       )}
     </div>
   );
@@ -186,7 +181,6 @@ export default function CertificationsGrid() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const deskRef = useRef<HTMLDivElement>(null);
   const total = certifications.length;
-  const mobile = useIsMobile();
   const [order, setOrder] = useState(() => certifications.map((_, i) => i));
   const [landed, setLanded] = useState(0);
 
@@ -199,11 +193,11 @@ export default function CertificationsGrid() {
 
   const bringToFront = (i: number) => setOrder((o) => (o[o.length - 1] === i ? o : [...o.filter((x) => x !== i), i]));
 
-  if (reduce) {
+  if (reduce || narrow) {
     return (
       <section id="certifications" ref={sectionRef} className="relative py-20">
         <Heading />
-        <ul className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <ul className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-[320px] sm:max-w-none mx-auto">
           {certifications.map((cert, i) => (
             <li key={cert.name} style={{ rotate: `${SPOTS[i % SPOTS.length].r * 0.4}deg` }}>
               <CertCard cert={cert} />
@@ -219,9 +213,9 @@ export default function CertificationsGrid() {
       id="certifications"
       ref={sectionRef}
       className="relative"
-      style={{ height: `${mobile ? 100 + total * 34 : 120 + total * 55}vh` }}
+      style={{ height: `${100 + total * 26}vh` }}
     >
-      <div className="sticky top-0 h-svh flex flex-col pt-24 pb-28 md:pb-10">
+      <div className="sticky top-0 h-svh flex flex-col pt-24 pb-10">
         <Heading landed={landed} hint={canDrag ? "drag them around" : "tap one to pull it up"} />
         <div ref={deskRef} className="relative flex-1 mt-5">
           {/* the desk */}
@@ -243,8 +237,7 @@ export default function CertificationsGrid() {
                 z={order.indexOf(i) + 1}
                 onFront={() => bringToFront(i)}
                 deskRef={deskRef}
-                canDrag={canDrag}
-                narrow={narrow}
+                canDrag={canDrag && i < landed}
               />
             ))}
           </ul>

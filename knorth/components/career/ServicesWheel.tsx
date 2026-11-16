@@ -10,13 +10,14 @@ import {
 } from "framer-motion";
 import { useReducedMotion } from "@/components/useReducedMotionSafe";
 import { useIsMobile } from "@/components/useIsMobile";
-import { TbArrowsHorizontal, TbPhoto, TbPlayerPauseFilled, TbPlayerPlayFilled, TbVolume, TbVolumeOff } from "react-icons/tb";
+import { TbArrowsHorizontal, TbPlayerPauseFilled, TbPlayerPlayFilled, TbVolume, TbVolumeOff } from "react-icons/tb";
 import { services, type Service } from "@/data/services";
 import { ACCENT3 } from "@/data/career";
 import { EASE_OUT } from "./motion";
 
 const N = services.length;
 const indexOf = (slug: string) => services.findIndex((s) => s.slug === slug);
+const JUMPS = [["stack", "Stack"], ["work", "Work"], ["side-quests", "Side quests"], ["certifications", "Certificates"]] as const;
 
 // ── Picker wheel ─────────────────────────────────────────────────────────────
 function Wheel({ active, onPick, axis }: { active: number; onPick: (i: number) => void; axis: "y" | "x" }) {
@@ -57,8 +58,8 @@ function Wheel({ active, onPick, axis }: { active: number; onPick: (i: number) =
                 onClick={() => onPick(i)}
                 aria-current={isActive ? "true" : undefined}
                 tabIndex={isActive ? 0 : -1}
-                className={`block whitespace-nowrap text-left py-3 px-1 transition-colors duration-200 ${
-                  vertical ? "-translate-y-1/2" : "-translate-x-1/2 -translate-y-1/2"
+                className={`block whitespace-nowrap text-left px-1 transition-colors duration-200 ${
+                  vertical ? "py-3 -translate-y-1/2" : "py-4 -translate-x-1/2 -translate-y-1/2"
                 } ${isActive ? "text-xl font-bold text-foreground" : "text-lg text-foreground/60 hover:text-foreground"}`}
               >
                 {s.name}
@@ -102,7 +103,7 @@ function Detail({ service, onPick }: { service: Service; onPick: (i: number) => 
   return (
     <motion.div key={service.slug}>
         <motion.p
-          className="font-mono text-xs uppercase tracking-[0.25em] mb-3 md:mb-5"
+          className="hidden md:block font-mono text-xs uppercase tracking-[0.25em] mb-5"
           style={{ color: service.color }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -134,7 +135,7 @@ function Detail({ service, onPick }: { service: Service; onPick: (i: number) => 
               <button
                 key={slug}
                 onClick={() => onPick(i)}
-                className="inline-block py-2.5 -my-2.5 font-mono underline-offset-4 decoration-1 hover:underline"
+                className="inline-block py-3 -my-3 font-mono underline-offset-4 decoration-1 hover:underline"
                 style={{ color: services[i].color }}
               >
                 /{slug}
@@ -158,59 +159,7 @@ type Slide = { src?: string; poster?: string; start?: number; caption: string; v
 const isVideo = (src?: string) => !!src && /\.(mp4|webm|mov)$/i.test(src);
 
 function slidesFor(service: Service): Slide[] {
-  if (service.gallery?.length) return service.gallery.map((g, i) => ({ ...g, variant: i }));
-  return [0, 1, 2].map((variant) => ({ caption: `${service.name} · image ${variant + 1}`, variant }));
-}
-
-function Placeholder({ service, variant, total }: { service: Service; variant: number; total: number }) {
-  const mix = [30, 18, 42][variant % 3];
-  const tint = `color-mix(in srgb, ${service.color} ${mix}%, #161616)`;
-  const solid = { background: `color-mix(in srgb, ${service.color} ${mix + 20}%, #1d1d1d)` };
-  const pop = { background: service.color, opacity: 0.85 };
-  return (
-    <div
-      className="absolute inset-0 p-[7%]"
-      style={{ background: `linear-gradient(${150 + variant * 70}deg, ${tint} 0%, #141414 78%)` }}
-    >
-      {variant % 3 === 0 && (
-        <div className="h-full flex flex-col gap-[5%]">
-          <div className="h-[14%] w-1/2 rounded-md" style={solid} />
-          <div className="flex-1 flex gap-[5%]">
-            <div className="flex-[3] rounded-lg" style={solid} />
-            <div className="flex-[2] flex flex-col gap-[8%]">
-              <div className="flex-1 rounded-lg" style={solid} />
-              <div className="flex-1 rounded-lg" style={pop} />
-            </div>
-          </div>
-        </div>
-      )}
-      {variant % 3 === 1 && (
-        <div className="h-full grid grid-cols-3 gap-[4%] pb-[8%]">
-          {[0, 1, 2].map((c) => (
-            <div key={c} className="flex flex-col gap-[8%]">
-              <div className="flex-[3] rounded-lg" style={c === 1 ? pop : solid} />
-              <div className="h-[8%] w-3/4 rounded" style={solid} />
-              <div className="h-[8%] w-1/2 rounded" style={solid} />
-            </div>
-          ))}
-        </div>
-      )}
-      {variant % 3 === 2 && (
-        <div className="h-full flex items-center gap-[7%]">
-          <div className="h-[72%] aspect-square rounded-full" style={pop} />
-          <div className="flex-1 flex flex-col gap-4">
-            <div className="h-5 w-full rounded" style={solid} />
-            <div className="h-5 w-4/5 rounded" style={solid} />
-            <div className="h-5 w-3/5 rounded" style={solid} />
-          </div>
-        </div>
-      )}
-      <p className="absolute bottom-[5%] left-[7%] flex items-center gap-1.5 text-[11px] text-foreground/60">
-        <TbPhoto aria-hidden className="w-3.5 h-3.5" />
-        your image {variant + 1} of {total}
-      </p>
-    </div>
-  );
+  return (service.gallery ?? []).map((g, i) => ({ ...g, variant: i }));
 }
 
 // Every piece is shown twice: once filling the whole frame as the background, and once whole on top
@@ -302,7 +251,7 @@ function VideoSlide({ slide, live }: { slide: Slide; live: boolean }) {
   );
 }
 
-function SlideLayer({ service, slide, total, live = false }: { service: Service; slide: Slide; total: number; live?: boolean }) {
+function SlideLayer({ slide, live = false }: { slide: Slide; live?: boolean }) {
   if (isVideo(slide.src)) return <VideoSlide key={slide.src} slide={slide} live={live} />;
   if (slide.src) {
     return (
@@ -312,7 +261,7 @@ function SlideLayer({ service, slide, total, live = false }: { service: Service;
       </>
     );
   }
-  return <Placeholder service={service} variant={slide.variant} total={total} />;
+  return null;
 }
 
 function Gallery({ service }: { service: Service }) {
@@ -381,7 +330,7 @@ function Gallery({ service }: { service: Service }) {
     <figure>
       <div
         ref={ref}
-        className={`relative aspect-[16/9] md:aspect-[16/11] rounded-2xl overflow-hidden border border-white/10 select-none touch-pan-y ${single ? "" : "cursor-ew-resize"}`}
+        className={`relative aspect-[2/1] md:aspect-[16/11] rounded-2xl overflow-hidden border border-white/10 select-none touch-pan-y ${single ? "" : "cursor-ew-resize"}`}
         style={{ boxShadow: "0 30px 60px -24px rgba(0,0,0,0.8)" }}
         onPointerDown={(e) => {
           if (single || busy.current) return;
@@ -416,10 +365,10 @@ function Gallery({ service }: { service: Service }) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <SlideLayer key={base} service={service} slide={slides[base]} total={total} live />
+            <SlideLayer key={base} slide={slides[base]} live />
             {!single && (
               <motion.div className="absolute inset-0" style={{ clipPath: clip }}>
-                <SlideLayer key={incoming} service={service} slide={slides[incoming]} total={total} />
+                <SlideLayer key={incoming} slide={slides[incoming]} />
               </motion.div>
             )}
           </motion.div>
@@ -428,7 +377,7 @@ function Gallery({ service }: { service: Service }) {
         {!single && (
           <>
             <motion.span
-              className="absolute top-3 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-black/60 text-[11px] text-foreground/85 whitespace-nowrap pointer-events-none"
+              className="absolute top-3 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-black/60 text-xs text-foreground/85 whitespace-nowrap pointer-events-none"
               animate={{ opacity: touched ? 0 : 1 }}
             >
               drag the line
@@ -497,29 +446,41 @@ export default function ServicesWheel() {
   const service = services[active];
 
   return (
-    <section id="services" ref={sectionRef} className="relative" style={{ height: `${100 + N * (mobile ? 24 : 40)}vh` }}>
-      <div className="sticky top-0 h-svh flex flex-col justify-start pt-20 md:pt-24 pb-24 md:pb-6 gap-4 md:gap-6">
+    <section id="services" ref={sectionRef} className="relative" style={{ height: `${100 + N * (mobile ? 14 : 20)}vh` }}>
+      <div className="sticky top-0 h-svh flex flex-col justify-start md:justify-center pt-20 md:pt-0 pb-24 md:pb-0 gap-3 md:gap-8">
         {/* Career intro rides with the panel it introduces */}
         <div>
-          <h2 className="font-mono font-semibold text-xl md:text-2xl leading-none tracking-[-0.02em]">
-            <span className="text-foreground/30">$ </span>sudo make <span style={{ color: ACCENT3 }}>career</span>
+          <h2 className="font-mono font-semibold text-xl md:text-4xl leading-none tracking-[-0.02em]">
+            <span className="text-foreground/50">$ </span>sudo make <span style={{ color: ACCENT3 }}>career</span>
             <span aria-hidden className="inline-block w-[0.5em] h-[0.9em] ml-1.5 align-[-0.1em] animate-pulse" style={{ background: ACCENT3 }} />
           </h2>
-          <p className="mt-2 text-[13px] leading-snug text-foreground/55">
-            What you can hire me for. Scroll to browse.
+          {/* The career part is long; these jump past the pinned parts */}
+          <p className="mt-2 md:mt-3 flex flex-wrap items-center gap-x-2.5 md:gap-x-4 text-[13px] leading-snug text-foreground/60">
+            <span className="hidden md:inline">What I build, design and wire up.</span>
+            <span>Skip to</span>
+            {JUMPS.map(([id, label]) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                className="py-2 font-medium text-foreground/85 underline underline-offset-4 decoration-1 decoration-foreground/30 hover:text-foreground hover:decoration-foreground transition-colors"
+              >
+                {label}
+              </a>
+            ))}
           </p>
         </div>
         <div className="md:hidden">
           <Wheel active={active} onPick={goTo} axis="x" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-[150px_minmax(0,1fr)_minmax(0,1fr)] lg:grid-cols-[170px_minmax(0,1fr)_minmax(0,1.05fr)] gap-10 md:gap-12 lg:gap-20 xl:gap-24 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-[150px_minmax(0,1fr)_minmax(0,1.1fr)] lg:grid-cols-[170px_minmax(0,0.85fr)_minmax(0,1.3fr)] gap-10 lg:gap-14 items-center">
           <div className="hidden md:block">
             <Wheel active={active} onPick={goTo} axis="y" />
           </div>
           <div className="@container md:min-h-[340px] flex flex-col justify-center">
             <Detail service={service} onPick={goTo} />
           </div>
-          <Gallery key={service.slug} service={service} />
+          {/* no images yet for a service: show the words alone, never a stand-in */}
+          {service.gallery?.length ? <Gallery key={service.slug} service={service} /> : null}
         </div>
       </div>
     </section>

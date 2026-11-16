@@ -288,6 +288,7 @@ export default function Hero() {
                 </ul>
               </div>
             </div>
+
           </div>
 
           <div className="relative flex justify-center md:justify-end items-center w-full order-1 md:order-2">

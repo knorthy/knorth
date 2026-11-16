@@ -1,9 +1,9 @@
 "use client";
 // Scroll story (reference: nickho-motorsports.nl history section).
-// Desktop: photos scroll in the middle column and open through a clip-path window as they reach the
+// Desktop (lg and up): photos scroll in the middle column and open through a clip-path window as they reach the
 // centre; the title (left) and details (right) stay pinned and swap with a masked slide. A light in
 // the active job's colour follows behind.
-// Mobile: a stacked list with the same clip reveal.
+// Phones and tablets: a stacked list with the same clip reveal.
 // After the jobs, "side quests" (leadership & volunteering) run sideways: a pinned horizontal track of
 // lanyard badges that swing with scroll speed.
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -76,8 +76,8 @@ function Bullet({ text, color }: { text: string; color: string }) {
   );
 }
 
-// ── Photo (or color tile fallback) ───────────────────────────────────────────
-function JobVisual({ job, index }: { job: Job; index: number }) {
+// ── Photo, or a tile that lists what the job covered ─────────────────────────
+function JobVisual({ job }: { job: Job }) {
   if (job.image) {
     return <img src={job.image} alt={job.role} className="w-full h-full object-cover" />;
   }
@@ -86,12 +86,15 @@ function JobVisual({ job, index }: { job: Job; index: number }) {
       className="w-full h-full flex flex-col justify-between p-7 md:p-8"
       style={{ background: `linear-gradient(160deg, ${job.color}40 0%, #161616 72%)` }}
     >
-      <span className="block text-7xl font-bold leading-[0.8] tracking-[-0.03em] tabular-nums" style={{ color: job.color }}>
-        {pad(index + 1)}
-      </span>
-      <span className="flex flex-col gap-2 max-w-[24ch]">
-        <span aria-hidden className="h-px w-8" style={{ background: job.color }} />
-        <span className="text-sm font-medium leading-snug text-foreground/80 text-balance">{job.category}</span>
+      <span className="text-sm font-medium text-foreground/80">{job.company}</span>
+      <span className="flex flex-col">
+        <span aria-hidden className="h-px w-8 mb-3" style={{ background: job.color }} />
+        {/* a wrapped row in the wide phone tile, a stack in the tall desktop one */}
+        <span className="flex flex-wrap gap-x-3 gap-y-1 md:flex-col md:gap-1.5">
+          {job.category.split(/, | · /).map((part) => (
+            <span key={part} className="text-lg md:text-2xl font-bold leading-tight" style={{ color: job.color }}>{part}</span>
+          ))}
+        </span>
       </span>
     </div>
   );
@@ -131,17 +134,19 @@ function StoryPhoto({ job, index, isActive, register }: {
       }}
     >
       <motion.div
+        // remounts when the preference resolves, so scroll-bound styles never stick to a still tile
+        key={reduce ? "still" : "moving"}
         className="w-full h-full rounded-[18px] overflow-hidden"
         style={reduce ? undefined : { transform, clipPath }}
       >
         {job.image ? (
           // Photos drift against the frame, so they read as seen through a window
           <motion.div className="w-full h-[118%] -mt-[9%]" style={reduce ? undefined : { y: innerY }}>
-            <JobVisual job={job} index={index} />
+            <JobVisual job={job} />
           </motion.div>
         ) : (
           // Colour tiles stay put so the number and label keep their padding
-          <JobVisual job={job} index={index} />
+          <JobVisual job={job} />
         )}
       </motion.div>
     </div>
@@ -156,23 +161,36 @@ function ScrollStory() {
   const activeRef = useRef(0);
   const photoRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // A photo becomes active when it crosses a thin band through the middle of the viewport
+  // The active job is the photo nearest the middle of the screen. It's read from scroll position, so
+  // jump links and skips land on the right one too.
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          const i = Number((entry.target as HTMLElement).dataset.index);
-          if (i === activeRef.current) continue;
-          dirRef.current = i > activeRef.current ? 1 : -1;
-          activeRef.current = i;
-          setActive(i);
-        }
-      },
-      { rootMargin: "-45% 0px -45% 0px" },
-    );
-    photoRefs.current.forEach((el) => el && observer.observe(el));
-    return () => observer.disconnect();
+    let raf = 0;
+    const update = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const mid = window.innerHeight / 2;
+        let best = activeRef.current;
+        let bestDist = Infinity;
+        photoRefs.current.forEach((el, i) => {
+          if (!el) return;
+          const r = el.getBoundingClientRect();
+          const dist = Math.abs(r.top + r.height / 2 - mid);
+          if (dist < bestDist) { bestDist = dist; best = i; }
+        });
+        if (best === activeRef.current) return;
+        dirRef.current = best > activeRef.current ? 1 : -1;
+        activeRef.current = best;
+        setActive(best);
+      });
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
   }, []);
 
   const job = jobs[active];
@@ -183,7 +201,7 @@ function ScrollStory() {
 
   return (
     <DirContext.Provider value={dirRef}>
-    <div className="relative hidden md:block">
+    <div className="relative hidden lg:block">
       {/* Light in the active job's colour, pinned behind the photo column */}
       <div aria-hidden className="absolute inset-0 pointer-events-none">
         <div className="sticky top-0 h-svh flex items-center justify-center">
@@ -196,24 +214,34 @@ function ScrollStory() {
         </div>
       </div>
 
-      <div className="relative grid grid-cols-[1fr_minmax(0,300px)_1fr] gap-12 lg:gap-16">
+      <div className="relative grid grid-cols-[0.8fr_260px_1.2fr] xl:grid-cols-[0.8fr_300px_1.2fr] gap-10 xl:gap-16">
         {/* LEFT — pinned title */}
         <div>
           <div className="sticky top-0 h-svh flex flex-col justify-center">
             <div className="relative">
             {/* The part heading hangs just above the pinned title, so it stays with the details */}
             <PartHeading
-              size="xs"
-              className="absolute bottom-full left-0 right-0 mb-8"
+              size="sm"
+              className="absolute bottom-full left-0 right-0 mb-10"
               title={<>Put to <span style={{ color: "var(--color-accent)" }}>work</span></>}
               description="Where I've worked so far. Scroll through each role."
             />
+            {/* every job, for screen readers; the animated panels around it are hidden from them */}
+      <ol className="sr-only">
+        {jobs.map((j) => (
+          <li key={j.role}>
+            <h4>{j.role}</h4>
+            <p>{j.company}, {j.type}, {j.period}</p>
+            <ul>{j.bullets.map((b) => <li key={b}>{b}</li>)}</ul>
+          </li>
+        ))}
+      </ol>
             <AnimatePresence mode="popLayout" initial={false}>
-              <motion.div key={active} initial="enter" animate="show" exit="exit">
+              <motion.div key={active} aria-hidden initial="enter" animate="show" exit="exit">
                 <MaskLine className="text-xs font-medium tracking-wide mb-3" index={0}>
                   <span style={{ color: job.color }}>{job.period}</span>
                 </MaskLine>
-                <h4 className="text-4xl lg:text-5xl font-bold uppercase leading-[0.95] tracking-tight text-balance">
+                <h4 className="text-3xl lg:text-4xl font-bold uppercase leading-[0.95] tracking-tight text-balance">
                   {job.role.split(" ").map((word, i) => (
                     <MaskLine key={word + i} index={i + 1}>{word}</MaskLine>
                   ))}
@@ -225,7 +253,7 @@ function ScrollStory() {
         </div>
 
         {/* MIDDLE — photos scroll normally; padding lets the first and last reach the centre */}
-        <div className="flex flex-col gap-[28vh] py-[30vh]">
+        <div className="flex flex-col gap-[18vh] py-[30vh]">
           {jobs.map((j, i) => (
             <StoryPhoto
               key={j.role}
@@ -239,22 +267,26 @@ function ScrollStory() {
 
         {/* RIGHT — pinned details, counter and skip */}
         <div>
-          <div className="sticky top-0 h-svh flex flex-col justify-center">
+          {/* The details get the space above the skip row and centre inside it, so a long job can never
+              run into the row */}
+          <div className="sticky top-0 h-svh flex flex-col pt-24 pb-28">
+            <div className="relative flex-1 min-h-0 flex flex-col justify-center">
             <AnimatePresence mode="popLayout" initial={false}>
-              <motion.div key={active} initial="enter" animate="show" exit="exit" className="space-y-3 max-w-[38ch]">
+              <motion.div key={active} aria-hidden initial="enter" animate="show" exit="exit" className="space-y-3 max-w-[48ch]">
                 <MaskLine className="text-sm text-foreground/55" index={0}>
-                  {job.company} <span className="text-foreground/30">·</span> {job.type}
+                  {job.company} <span className="text-foreground/50">·</span> {job.type}
                 </MaskLine>
                 {job.bullets.map((b, i) => (
                   <MaskLine key={b} index={i + 1}><Bullet text={b} color={job.color} /></MaskLine>
                 ))}
               </motion.div>
             </AnimatePresence>
+            </div>
 
-            <div className="absolute bottom-24 left-0 right-0 flex items-center justify-between">
+            <div className="shrink-0 mt-6 flex items-center justify-between">
               <button
                 onClick={skip}
-                className="text-xs tracking-wide text-foreground/65 hover:text-foreground transition-colors"
+                className="py-3 -my-3 text-xs tracking-wide text-foreground/65 hover:text-foreground transition-colors"
               >
                 Skip to side quests
               </button>
@@ -297,7 +329,7 @@ function useFadeUp(): Variants {
       };
 }
 
-function MobileJob({ job, index }: { job: Job; index: number }) {
+function MobileJob({ job }: { job: Job }) {
   const reduce = useReducedMotion();
   const fadeUp = useFadeUp();
   const ref = useRef<HTMLDivElement>(null);
@@ -305,13 +337,13 @@ function MobileJob({ job, index }: { job: Job; index: number }) {
   const clipPath = useWindowClip(scrollYProgress);
   return (
     <motion.li variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.2 }}>
-      <motion.div ref={ref} className="aspect-[16/9] rounded-[18px] overflow-hidden mb-5" style={reduce ? undefined : { clipPath }}>
-        <JobVisual job={job} index={index} />
+      <motion.div ref={ref} key={reduce ? "still" : "moving"} className="aspect-[16/9] md:aspect-[5/2] rounded-[18px] overflow-hidden mb-5" style={reduce ? undefined : { clipPath }}>
+        <JobVisual job={job} />
       </motion.div>
       <p className="text-xs font-medium tracking-wide mb-1" style={{ color: job.color }}>{job.period}</p>
       <h4 className="text-2xl font-bold uppercase tracking-tight">{job.role}</h4>
       <p className="text-sm text-foreground/55 mb-4">
-        {job.company} <span className="text-foreground/30">·</span> {job.type}
+        {job.company} <span className="text-foreground/50">·</span> {job.type}
       </p>
       <ul className="space-y-3">
         {job.bullets.map((b) => <li key={b}><Bullet text={b} color={job.color} /></li>)}
@@ -322,15 +354,14 @@ function MobileJob({ job, index }: { job: Job; index: number }) {
 
 function MobileList() {
   return (
-    <div className="md:hidden">
+    <div className="lg:hidden">
       <PartHeading
-        size="xs"
         className="mb-8"
         title={<>Put to <span style={{ color: "var(--color-accent)" }}>work</span></>}
         description="Where I've worked so far."
       />
       <ol className="flex flex-col gap-12">
-        {jobs.map((job, i) => <MobileJob key={job.role} job={job} index={i} />)}
+        {jobs.map((job) => <MobileJob key={job.role} job={job} />)}
       </ol>
     </div>
   );
@@ -373,7 +404,7 @@ function Badge({ aff, index, sway }: { aff: Quest; index: number; sway?: MotionV
       >
         <div className="relative h-24 flex items-start justify-center pt-4" style={{ background: aff.color }}>
           <span className="badge-hole" />
-          <span className="absolute left-5 bottom-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#0e0e0e]">
+          <span className="absolute left-5 bottom-3 text-xs font-bold uppercase tracking-[0.16em] text-[#0e0e0e]">
             {aff.kind === "member" ? "Member" : "Volunteer"}
           </span>
         </div>
@@ -393,16 +424,18 @@ function Badge({ aff, index, sway }: { aff: Quest; index: number; sway?: MotionV
   );
 }
 
-function SideQuestsIntro() {
+function SideQuestsIntro({ hint = true }: { hint?: boolean }) {
   return (
     <div className="shrink-0 w-[min(80vw,380px)] self-center pr-6">
       <PartHeading
         title={<>Side <span style={{ color: "var(--color-accent3)" }}>quests</span></>}
         description="Orgs I help run and events I've volunteered for, outside the day job. One badge each."
       />
-      <p aria-hidden className="mt-5 inline-flex items-center gap-2 text-xs text-foreground/65">
-        keep scrolling <TbArrowNarrowRight className="w-4 h-4" />
-      </p>
+      {hint && (
+        <p aria-hidden className="mt-5 inline-flex items-center gap-2 text-xs text-foreground/65">
+          keep scrolling <TbArrowNarrowRight className="w-4 h-4" />
+        </p>
+      )}
     </div>
   );
 }
@@ -466,12 +499,10 @@ function SideQuests() {
   if (reduce) {
     return (
       <div id="side-quests" ref={sectionRef} className="py-20">
-        <div className="flex gap-6 overflow-x-auto snap-x pb-6 items-start">
-          <SideQuestsIntro />
-          <ul className="flex gap-6 items-start">
-            {QUESTS.map((aff, i) => <Badge key={aff.org} aff={aff} index={i} />)}
-          </ul>
-        </div>
+        <SideQuestsIntro hint={false} />
+        <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-4 items-start">
+          {QUESTS.map((aff, i) => <Badge key={aff.org} aff={aff} index={i} />)}
+        </ul>
       </div>
     );
   }
@@ -481,7 +512,7 @@ function SideQuests() {
       id="side-quests"
       ref={sectionRef}
       className="relative left-1/2 -translate-x-1/2 w-screen mt-16"
-      style={{ height: `calc(100vh + ${distance}px)` }}
+      style={{ height: `calc(100vh + ${Math.round(distance * 0.6)}px)` }}
     >
       <div className="sticky top-0 h-svh overflow-hidden flex flex-col justify-center">
         <motion.div
@@ -499,6 +530,9 @@ function SideQuests() {
           </ul>
         </motion.div>
 
+        <a href="#certifications" className="absolute bottom-6 left-6 md:left-[max(1.5rem,calc((100vw-72rem)/2+1.5rem))] py-3 text-xs tracking-wide text-foreground/65 hover:text-foreground transition-colors">
+          Skip to certificates
+        </a>
         <div aria-hidden className="absolute bottom-10 left-1/2 -translate-x-1/2 w-40 h-[3px] rounded-full bg-white/10 overflow-hidden">
           <motion.span className="block h-full origin-left bg-[var(--color-accent3)]" style={{ scaleX: fill }} />
         </div>

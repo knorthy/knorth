@@ -35,8 +35,8 @@ function validate(f: Fields): FieldErrors {
 }
 
 const fieldClass = (invalid: boolean) =>
-  `w-full px-4 py-3.5 rounded-2xl bg-[#0b0b0b] border text-foreground text-sm placeholder:text-foreground/45 transition-colors focus:outline-none focus-visible:outline-none ${
-    invalid ? "border-[#ff6b9d] focus:border-[#ff6b9d]" : "border-white/10 hover:border-white/20 focus:border-[#ff7eb9]"
+  `w-full px-4 py-3.5 rounded-2xl bg-[#0b0b0b] border text-foreground text-sm placeholder:text-foreground/45 transition-[border-color,box-shadow] focus:outline-none focus-visible:outline-none focus:ring-2 ${
+    invalid ? "border-[#ff6b9d] focus:border-[#ff6b9d] focus:ring-[#ff6b9d]/35" : "border-white/10 hover:border-white/20 focus:border-[#ff7eb9] focus:ring-[#ff7eb9]/35"
   }`;
 
 export default function ContactForm() {

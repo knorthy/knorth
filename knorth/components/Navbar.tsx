@@ -3,7 +3,7 @@
 // dock along the bottom edge, where a thumb can reach them; Kniah sits at its right end.
 // The top bar gets out of the way: it slides up when scrolling down, comes back when scrolling up or
 // when the pointer heads for the top, and tucks away after a few idle seconds. In the Home section it
-// always stays. The logo and the phone dock never hide.
+// always stays. The logo, the Resume button and the phone dock never hide.
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
@@ -142,10 +142,10 @@ export default function Navbar() {
         </a>
       </div>
 
-      {/* Links and Resume: their own fixed layer, so sliding them away moves neither the logo nor the dock */}
+      {/* Links: their own fixed layer, so sliding them away moves neither the logo, Resume nor the dock */}
       <div
         data-hidden={hidden}
-        className="nav-bar fixed top-4 md:top-6 left-0 right-0 z-[52] flex items-center justify-end px-4 md:px-6 pointer-events-none [&>*]:pointer-events-auto"
+        className="nav-bar fixed top-4 md:top-6 left-0 right-0 z-[52] h-10 flex items-center justify-end px-4 md:px-6 pointer-events-none [&>*]:pointer-events-auto"
         onPointerEnter={() => hold(true)}
         onPointerLeave={() => hold(false)}
         onFocus={() => hold(true)}
@@ -170,8 +170,10 @@ export default function Navbar() {
         </ul>
       </div>
 
-      <div className="flex items-center gap-2">
-        {/* Resume / Hire Me button */}
+      </div>
+
+      {/* Resume / Hire Me: its own fixed layer, so it stays one tap away while the links slide off */}
+      <div className="fixed top-4 md:top-6 right-4 md:right-6 z-[52] h-10 flex items-center">
         <motion.a
           href={RESUME_URL}
           target="_blank"
@@ -197,7 +199,6 @@ export default function Navbar() {
         >
           {resumeHovered ? 'Hire Me' : 'Resume'}
         </motion.a>
-      </div>
       </div>
 
       {/* Mobile dock: section links within thumb reach. It stops short of the right edge to leave
@@ -227,7 +228,7 @@ export default function Navbar() {
                     />
                   )}
                   <Icon size={19} strokeWidth={on ? 2.4 : 2} aria-hidden className="relative" />
-                  <span className={`relative text-[10px] leading-none truncate max-w-full ${on ? 'font-bold' : 'font-medium'}`}>{short}</span>
+                  <span className={`relative text-[11px] leading-none truncate max-w-full ${on ? 'font-bold' : 'font-medium'}`}>{short}</span>
                 </a>
               </li>
             );

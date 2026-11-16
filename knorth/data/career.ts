@@ -108,7 +108,7 @@ export type Job = {
   period: string;
   category: string;
   color: string;
-  /** Optional photo for the scroll story, e.g. "/career/dev.jpg" (put files in /public/career). Falls back to a color tile. */
+  /** Optional photo for the scroll story, e.g. "/career/dev.jpg" (put files in /public/career). Falls back to a tile listing the category. */
   image?: string;
   /** "Title — description" bullets render the title in bold */
   bullets: string[];
@@ -116,36 +116,17 @@ export type Job = {
 
 export const jobs: Job[] = [
   {
+    // Three roles at one company share one stop; each bullet is a role with its dates
     role: "Engineering Sandbox Trainee",
     company: "whiteStrings®",
     type: "Internship · Remote",
-    period: "Sep 2026 – Present",
-    category: "Engineering Internship",
+    period: "Jun 2026 – Present",
+    category: "Laravel, SQL, React, TypeScript, QA testing",
     color: ACCENT,
     bullets: [
-      "Engineering Sandbox — Taking part in a self-paced, mentor-guided program, working on hands-on engineering tasks to keep building my skills.",
-    ],
-  },
-  {
-    role: "Developer Intern",
-    company: "whiteStrings®",
-    type: "Internship · Remote",
-    period: "Jul 2026 – Aug 2026",
-    category: "Laravel, SQL, React, TypeScript",
-    color: ACCENT,
-    bullets: [
-      "Expense Tracker — Trained in Laravel and SQL, then built an expense tracker app with the team using React and TypeScript.",
-    ],
-  },
-  {
-    role: "QA Analyst Intern",
-    company: "whiteStrings®",
-    type: "Internship · Remote",
-    period: "Jun 2026 – Jul 2026",
-    category: "Quality Assurance",
-    color: ACCENT,
-    bullets: [
-      "Quality Assurance — Tested the company's software to find bugs and make sure features worked properly before release.",
+      "Engineering Sandbox Trainee, Sep 2026 – Present — Taking part in a self-paced, mentor-guided program, working on hands-on engineering tasks to keep building my skills.",
+      "Developer Intern, Jul – Aug 2026 — Trained in Laravel and SQL, then built an expense tracker app with the team using React and TypeScript.",
+      "QA Analyst Intern, Jun – Jul 2026 — Tested the company's software to find bugs and make sure features worked properly before release.",
     ],
   },
   {

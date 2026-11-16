@@ -6,6 +6,7 @@ import {
   motion, useScroll, useSpring, useTransform, useVelocity, type MotionValue,
 } from "framer-motion";
 import { useReducedMotion } from "@/components/useReducedMotionSafe";
+import { useIsMobile } from "@/components/useIsMobile";
 import { TbCornerDownLeft } from "react-icons/tb";
 import { skillGroups, type SkillGroup } from "@/data/career";
 import PartHeading from "./PartHeading";
@@ -68,11 +69,11 @@ function KeyRow({ group, index, progress, skew }: {
 
 function StaticBoard() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5 md:gap-6">
       {skillGroups.map((g) => (
         <div key={g.category}>
           <h4 className="text-sm font-bold mb-3" style={{ color: g.color }}>{g.category}</h4>
-          <ul className="flex flex-wrap gap-3">
+          <ul className="flex flex-wrap gap-2 md:gap-3">
             {g.skills.map(({ name, icon }) => (
               <li key={name}><Keycap name={name} Icon={icon} color={g.color} /></li>
             ))}
@@ -85,6 +86,8 @@ function StaticBoard() {
 
 export default function SkillsSection() {
   const reduce = useReducedMotion();
+  // Phones get the wrapped board: sliding rows there can't be swiped and left a third of the keys off screen
+  const still = useIsMobile() || reduce;
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress, scrollY } = useScroll({ target: ref, offset: ["start end", "end start"] });
   const velocity = useVelocity(scrollY);
@@ -97,10 +100,10 @@ export default function SkillsSection() {
       <PartHeading
         className="mb-8"
         title={<>What I type <span style={{ color: "var(--color-accent2)" }}>with</span></>}
-        description={<>Every tool on this keyboard, frontend to firmware to final cut.<span className="hidden [@media(hover:hover)]:inline"> Hover a key, it clicks.</span></>}
+        description={<>Every tool on this keyboard, frontend to firmware to final cut.<span className="hidden [@media(hover:hover)]:inline"> Hover a key to press it.</span></>}
       />
 
-      {reduce ? (
+      {still ? (
         <StaticBoard />
       ) : (
         <div

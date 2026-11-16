@@ -426,7 +426,7 @@ class App {
       { image: `/logo/1.png`, text: 'OneIndang' },
       { image: `https://picsum.photos/seed/9/800/600?grayscale`, text: 'APFC' },
       { image: `https://picsum.photos/seed/10/800/600?grayscale`, text: 'Mobile Applications' },
-      { image: `https://picsum.photos/seed/21/800/600?grayscale`, text: 'Micocontrollers' },
+      { image: `https://picsum.photos/seed/21/800/600?grayscale`, text: 'Microcontrollers' },
       { image: `https://picsum.photos/seed/12/800/600?grayscale`, text: 'Machine Learning' },
     ];
     const galleryItems = items && items.length ? items : defaultItems;

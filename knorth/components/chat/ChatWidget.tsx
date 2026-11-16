@@ -178,7 +178,7 @@ export default function ChatWidget() {
     <>
       {/* Launcher */}
       {/* On phones Kniah sits at the right end of the nav dock and her bubble floats above her */}
-      <div className="kno-dock-slot fixed right-3 md:right-6 z-[60] flex items-end gap-2">
+      <div className="kno-dock-slot fixed right-3 md:right-6 z-[60] flex items-end gap-2 pointer-events-none [&>*]:pointer-events-auto">
         <AnimatePresence mode="wait">
           {bubbleText && (
             <motion.div
