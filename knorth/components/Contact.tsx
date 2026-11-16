@@ -1,11 +1,10 @@
 "use client";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowUpRight, FileDown, Github, Linkedin, Mail } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowDown, ArrowUpRight, FileDown, Github, Linkedin, Mail } from "lucide-react";
 import ContactForm from "@/components/ContactForm";
 import { CONTACT_EMAIL, RESUME_URL, SOCIALS } from "@/lib/site";
 import GalaxyDots from "@/components/GalaxyDots";
-
-import { useRef } from "react";
+import { EASE_OUT } from "@/components/career/motion";
 
 const ACCENT = "#f72585";
 const ACCENT2 = "#b5ff4d";
@@ -13,17 +12,13 @@ const ACCENT3 = "#ffe566";
 const ACCENT4 = "#a855f7";
 
 export default function Contact() {
-  const sectionRef = useRef<HTMLElement>(null);
-  
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"]
+  // Both columns rise in together, the form a beat behind
+  const rise = (delay = 0) => ({
+    initial: { opacity: 0, y: 16 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, amount: 0.3 },
+    transition: { duration: 0.5, ease: EASE_OUT, delay },
   });
-
-  // Animate opacity and scale based on scroll
-  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.8, 1, 1, 0.9]);
-  const y = useTransform(scrollYProgress, [0, 0.5, 1], [100, 0, -100]);
 
   // Email only shows once a real address is configured (lib/site.ts)
   const socialLinks = [
@@ -35,54 +30,23 @@ export default function Contact() {
 
   return (
     <section
-      ref={sectionRef}
       id="contact"
-      className="flex flex-col justify-center pt-16 pb-28 md:pb-8 px-6 relative overflow-visible"
+      className="flex flex-col justify-center pt-24 md:pt-32 pb-28 md:pb-8 px-6 relative"
     >
       {/* Galaxy dots */}
       <GalaxyDots />
 
-      {/* Blobs */}
-      <div className="absolute pointer-events-none" style={{ bottom: "0%", right: "-8%", width: 480, height: 480, borderRadius: "50%", background: "radial-gradient(circle, rgba(247,37,133,0.13) 0%, transparent 70%)", filter: "blur(60px)", zIndex: 0 }} />
-      {/* Large background text with scroll animation */}
-      <motion.div 
-        className="absolute top-[-4%] left-1/2 -translate-x-1/2 pointer-events-none select-none"
-        style={{
-          opacity,
-          scale,
-          y,
-        }}
-      >
-        <p
-          aria-hidden
-          className="text-[120px] md:text-[200px] lg:text-[250px] font-bold whitespace-nowrap"
-          style={{
-            background: "linear-gradient(to bottom, rgba(240, 240, 240, 0.02) 0%, rgba(240, 240, 240, 0.02) 40%, transparent 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}
-        >
-          Let&apos;s Build
-        </p>
-      </motion.div>
-
-      <div className="max-w-6xl mx-auto w-full relative z-10 flex flex-col justify-center flex-1 pt-20 md:pt-28">
+      <div className="max-w-6xl mx-auto w-full relative z-10 flex flex-col justify-center flex-1">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* LEFT SIDE - Info */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="flex flex-col justify-start"
-          >
+          <motion.div {...rise()} className="flex flex-col justify-start">
             {/* Heading with arrow */}
             <div className="mb-6">
-              <h2 className="text-4xl md:text-6xl font-bold flex items-center gap-3">
+              <h2 className="text-4xl md:text-6xl font-bold tracking-tight flex items-center gap-3">
                 Reach out
                 <ArrowUpRight
                   size={40}
+                  aria-hidden
                   className="opacity-70"
                   style={{ color: ACCENT }}
                 />
@@ -101,14 +65,8 @@ export default function Contact() {
 
             {/* Where else to find me */}
             <ul className="flex flex-col gap-2">
-              {socialLinks.map(({ Icon, label, handle, link, color, download }, idx) => (
-                <motion.li
-                  key={label}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: idx * 0.08, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                >
+              {socialLinks.map(({ Icon, label, handle, link, color, download }) => (
+                <li key={label}>
                   <a
                     href={link}
                     target={link.startsWith("http") ? "_blank" : undefined}
@@ -127,31 +85,19 @@ export default function Contact() {
                     </span>
                     <span className="text-sm text-foreground/60 truncate">{handle}</span>
                   </a>
-                </motion.li>
+                </li>
               ))}
             </ul>
           </motion.div>
 
           {/* RIGHT SIDE - Form */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="w-full"
-          >
+          <motion.div {...rise(0.08)} className="w-full">
             <ContactForm />
           </motion.div>
         </div>
 
         {/* Footer */}
-        <motion.footer
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          className="mt-10 pt-2 border-t border-foreground/5"
-        >
+        <footer className="mt-16 md:mt-20 pt-5 border-t border-foreground/10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-3 text-xs text-foreground/60">
             <p>© 2026 Tiffany Lyssa. All rights reserved.</p>
             <div className="flex flex-wrap justify-center gap-x-4 md:gap-y-2 text-xs [&>a]:py-2.5 md:[&>a]:py-0">
@@ -170,12 +116,12 @@ export default function Contact() {
               <a href="#contact" className="hover:text-foreground transition-colors">
                 Contact
               </a>
-              <a href={RESUME_URL} download className="font-semibold text-foreground/80 hover:text-foreground transition-colors">
-                Resume ↓
+              <a href={RESUME_URL} download className="inline-flex items-center gap-1 font-semibold text-foreground/80 hover:text-foreground transition-colors">
+                Resume <ArrowDown size={12} aria-hidden />
               </a>
             </div>
           </div>
-        </motion.footer>
+        </footer>
       </div>
     </section>
   );
