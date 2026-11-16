@@ -1,34 +1,98 @@
-// /work: every system in full, plus articles and research once data/writing.ts has entries.
-// The case files on /home are the teaser; this is the open folder. Content comes from data/projects.ts.
+// /work: every project as a card, plus achievements, and research and articles once data/writing.ts
+// has entries. The case files on /home are the teaser; this is the open folder.
+// Content comes from data/projects.ts, data/career.ts (certifications) and data/writing.ts.
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, FileDown } from "lucide-react";
 import GalaxyDots from "@/components/GalaxyDots";
 import PixelLogo from "@/components/PixelLogo";
-import { projects } from "@/data/projects";
+import { certifications } from "@/data/career";
+import { projects, type Project } from "@/data/projects";
 import { articles, research, type Writing } from "@/data/writing";
 import { RESUME_URL } from "@/lib/site";
+import "./work.css";
 
 export const metadata: Metadata = {
   title: "Work · Tiffany Lyssa",
-  description: "Every system Tiffany Lyssa has built: what each one does, her role in it and what it was built with.",
+  description: "Projects, achievements, research and articles by Tiffany Lyssa: what each build does, her role in it and what it runs on.",
 };
 
-const pad = (n: number) => String(n).padStart(2, "0");
 const LINK = "underline underline-offset-4 decoration-1 decoration-foreground/30 hover:decoration-foreground transition-colors";
 
+// ── Project card: picture on top melting into the card, stack as pills over it ──
+function ProjectVisual({ p }: { p: Project }) {
+  if (p.image) {
+    // eslint-disable-next-line @next/next/no-img-element -- plain <img>, like the rest of the site
+    return <img src={p.image} alt="" loading="lazy" className="work-card-img absolute inset-0 w-full h-full object-cover object-top" />;
+  }
+  if (p.logo) {
+    return (
+      <div className="absolute inset-0 grid place-items-center pb-[22%]" style={{ background: `color-mix(in srgb, ${p.color} 16%, #121212)` }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={p.logo} alt="" loading="lazy" className="work-card-img h-[50%] w-auto rounded-xl" />
+      </div>
+    );
+  }
+  // No picture yet: the project's short name, set large in its own colour
+  return (
+    <div className="absolute inset-0 grid place-items-center pb-[14%]" style={{ background: `color-mix(in srgb, ${p.color} 14%, #121212)` }}>
+      <span aria-hidden className="work-card-img font-mono font-semibold text-[clamp(2.5rem,6vw,4rem)] leading-none tracking-[-0.04em]" style={{ color: p.color }}>
+        {p.slug}
+      </span>
+    </div>
+  );
+}
+
+function ProjectCard({ p }: { p: Project }) {
+  return (
+    <article aria-labelledby={`${p.slug}-title`} className="work-card flex flex-col overflow-hidden rounded-3xl bg-[#151515] border border-white/[0.08]">
+      <div className="relative aspect-[16/9] overflow-hidden">
+        <ProjectVisual p={p} />
+        {/* the picture fades into the card */}
+        <div aria-hidden className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-transparent to-[#151515]" />
+        {p.stack && (
+          <ul className="absolute top-4 left-4 right-4 md:top-5 md:left-5 md:right-5 flex flex-wrap gap-1.5">
+            {p.stack.map((s) => (
+              <li key={s} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/60 border border-white/10 backdrop-blur-sm text-xs text-white/90">
+                <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }} />
+                {s}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div className="relative flex flex-col flex-1 px-5 md:px-7 pb-6 md:pb-7 -mt-2">
+        <h3 id={`${p.slug}-title`} className="text-xl md:text-2xl font-medium leading-[1.15] tracking-tight text-balance">{p.name}</h3>
+        {p.role && <p className="mt-2 text-[13px] font-semibold" style={{ color: p.color }}>{p.role}</p>}
+        <p className="mt-2.5 text-sm md:text-[15px] leading-relaxed text-foreground/65 max-w-[52ch]">{p.summary}</p>
+        {p.link && (
+          <a
+            href={p.link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 self-start inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#f0f0f0] text-[#0e0e0e] text-sm font-semibold transition-[transform,background-color] duration-150 ease-out hover:bg-white active:scale-[0.97]"
+          >
+            {p.link.label} <ArrowUpRight size={15} aria-hidden />
+          </a>
+        )}
+      </div>
+    </article>
+  );
+}
+
+// ── Research and articles: appear once they have entries ──
 function WritingList({ id, title, accent, items }: { id: string; title: React.ReactNode; accent: string; items: Writing[] }) {
   if (!items.length) return null;
   return (
-    <section id={id} className="mt-24 md:mt-32 scroll-mt-28">
-      <h2 className="text-3xl md:text-5xl font-bold tracking-tight">{title}</h2>
-      <ul className="mt-8 border-t border-foreground/10">
+    <section id={id} className="mt-20 md:mt-24 scroll-mt-36">
+      <h2 className="text-2xl md:text-4xl font-bold tracking-tight">{title}</h2>
+      <ul className="mt-6 border-t border-foreground/10">
         {items.map((w) => (
           <li key={w.href} className="border-b border-foreground/10">
             <a href={w.href} target="_blank" rel="noopener noreferrer" className="group grid md:grid-cols-[180px_1fr_auto] gap-x-10 gap-y-1 py-6">
               <span className="text-sm text-foreground/60 tabular-nums">{[w.where, w.date].filter(Boolean).join(" · ")}</span>
               <span>
-                <span className="block text-xl font-semibold leading-snug group-hover:text-[var(--tint)] transition-colors" style={{ "--tint": accent } as React.CSSProperties}>{w.title}</span>
+                <span className="block text-lg font-semibold leading-snug group-hover:text-[var(--tint)] transition-colors" style={{ "--tint": accent } as React.CSSProperties}>{w.title}</span>
                 {w.summary && <span className="mt-2 block text-[15px] leading-relaxed text-foreground/70 max-w-[65ch]">{w.summary}</span>}
               </span>
               <ArrowUpRight size={20} aria-hidden className="hidden md:block mt-1 text-foreground/50 transition-transform duration-200 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -41,12 +105,15 @@ function WritingList({ id, title, accent, items }: { id: string; title: React.Re
 }
 
 export default function WorkPage() {
-  const systems = projects.filter((p) => p.summary);
-  const sections = [
-    { id: "systems", label: "Systems", count: systems.length },
-    { id: "articles", label: "Articles", count: articles.length },
+  const built = projects.filter((p) => p.summary);
+  // the win first, then the certificates
+  const achievements = [...certifications].sort((a, b) => Number(/champion/i.test(b.name)) - Number(/champion/i.test(a.name)));
+  const tabs = [
+    { id: "projects", label: "Projects", count: built.length },
+    { id: "achievements", label: "Achievements", count: achievements.length },
     { id: "research", label: "Research", count: research.length },
-  ].filter((s) => s.count > 0);
+    { id: "articles", label: "Articles", count: articles.length },
+  ];
 
   return (
     <div className="relative overflow-x-clip">
@@ -54,7 +121,7 @@ export default function WorkPage() {
         {/* fade behind the bar so scrolling text doesn't collide with it (same as the home nav) */}
         <div
           aria-hidden
-          className="fixed inset-x-0 top-0 h-24 -z-10 pointer-events-none"
+          className="fixed inset-x-0 top-0 h-32 md:h-24 -z-10 pointer-events-none"
           style={{ background: "linear-gradient(to bottom, var(--background) 35%, color-mix(in srgb, var(--background) 70%, transparent) 65%, transparent)" }}
         />
         <Link href="/home" aria-label="Tiffany Lyssa, home" className="block py-1">
@@ -68,9 +135,28 @@ export default function WorkPage() {
         >
           <FileDown size={15} aria-hidden /> Resume
         </a>
+        {/* Section navigation, fixed in the top bar: centred between the logo and Resume on desktop, on
+            its own row under them on phones. A section with nothing in it yet is shown as on its way. */}
+        <nav aria-label="On this page" className="absolute top-12 inset-x-0 md:top-0 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 flex justify-center pointer-events-none">
+          <ul className="pointer-events-auto inline-flex max-w-full overflow-x-auto gap-1 p-1 rounded-full bg-[#161616]/90 border border-white/10 backdrop-blur-md shadow-[0_16px_32px_-16px_rgba(0,0,0,0.9)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {tabs.map((t) => (
+              <li key={t.id} className="shrink-0">
+                {t.count > 0 ? (
+                  <a href={`#${t.id}`} className="work-tab inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-[13px] font-semibold text-foreground/85">
+                    {t.label} <span className="text-foreground/55 tabular-nums font-medium">{t.count}</span>
+                  </a>
+                ) : (
+                  <span aria-disabled="true" className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full text-[13px] font-semibold text-foreground/45">
+                    {t.label} <span className="font-medium">soon</span>
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </nav>
       </header>
 
-      <main className="relative max-w-6xl mx-auto px-6 pt-32 md:pt-40 pb-24">
+      <main className="relative max-w-5xl mx-auto px-6 pt-40 md:pt-36 pb-24">
         {/* same sky as the case files this page opens from */}
         <div aria-hidden className="absolute inset-x-0 top-0 h-[560px] pointer-events-none [mask-image:linear-gradient(#000_55%,transparent)]">
           <GalaxyDots count={50} />
@@ -82,94 +168,53 @@ export default function WorkPage() {
             Back to the folder
           </Link>
 
-          <h1 className="mt-8 text-5xl md:text-7xl font-bold leading-[1.02] tracking-tight text-balance">
+          <h1 className="mt-6 text-4xl md:text-6xl font-bold leading-[1.02] tracking-tight text-balance">
             Every file, <span className="text-[var(--color-accent)]">opened</span>
           </h1>
-          <p className="mt-5 text-base md:text-lg leading-relaxed text-foreground/70 max-w-[52ch]">
-            All {systems.length} systems I&apos;ve built so far: what each one does, my part in it and what it runs on.
+          <p className="mt-4 text-[15px] md:text-base leading-relaxed text-foreground/70 max-w-[52ch]">
+            What I&apos;ve built, what I&apos;ve won and what I&apos;ve written up: each build with what it does, my part in it and what it runs on.
           </p>
-
-          {sections.length > 1 && (
-            <nav aria-label="On this page" className="mt-8 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-              {sections.map((s) => (
-                <a key={s.id} href={`#${s.id}`} className={`py-2 font-medium text-foreground/85 hover:text-foreground ${LINK}`}>
-                  {s.label} <span className="text-foreground/55 tabular-nums">{s.count}</span>
-                </a>
-              ))}
-            </nav>
-          )}
-
-          {/* index: the folder's contents list */}
-          <ol className="mt-12 md:mt-16 grid sm:grid-cols-2 gap-x-12 border-t border-foreground/10">
-            {systems.map((p, i) => (
-              <li key={p.slug} className="border-b border-foreground/10">
-                <a href={`#${p.slug}`} className="group flex items-baseline gap-4 py-3.5">
-                  <span className="font-mono text-xs text-foreground/55 tabular-nums">{pad(i + 1)}</span>
-                  <span className="text-[15px] font-medium leading-snug text-foreground/85 group-hover:text-[var(--tint)] transition-colors" style={{ "--tint": p.color } as React.CSSProperties}>
-                    {p.name}
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ol>
         </div>
 
-        <section id="systems" className="relative mt-20 md:mt-28 scroll-mt-28">
-          <h2 className="sr-only">Systems</h2>
-          {systems.map((p, i) => (
-            <article
-              key={p.slug}
-              id={p.slug}
-              aria-labelledby={`${p.slug}-title`}
-              className="grid md:grid-cols-[200px_1fr] gap-x-12 gap-y-4 py-12 md:py-16 border-t border-foreground/10 scroll-mt-24"
-            >
-              <div>
-                <p className="flex items-center gap-2 font-mono text-xs tracking-[0.12em] text-foreground/60">
-                  <span aria-hidden className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }} />
-                  CASE {pad(i + 1)}
-                </p>
-                {p.role && (
-                  <ul className="mt-3 md:mt-4 flex flex-wrap md:flex-col gap-x-3 gap-y-1 text-sm font-semibold" style={{ color: p.color }}>
-                    {p.role.split(" · ").map((r) => <li key={r}>{r}</li>)}
-                  </ul>
-                )}
-              </div>
-              <div>
-                <h3 id={`${p.slug}-title`} className="text-2xl md:text-4xl font-bold leading-[1.1] tracking-tight text-balance">{p.name}</h3>
-                <p className="mt-4 text-base md:text-lg leading-relaxed text-foreground/75 max-w-[62ch]">{p.summary}</p>
-                {p.stack && (
-                  <p className="mt-5 text-sm text-foreground/60">
-                    <span className="text-foreground/85">Built with</span> {p.stack.join(", ")}
-                  </p>
-                )}
-                {p.link && (
-                  <a href={p.link.href} target="_blank" rel="noopener noreferrer" className={`mt-5 inline-flex items-center gap-1.5 py-2 text-sm font-semibold ${LINK}`}>
-                    {p.link.label} <ArrowUpRight size={15} aria-hidden />
-                  </a>
-                )}
-                {p.image && (
-                  // eslint-disable-next-line @next/next/no-img-element -- plain <img>, like the rest of the site
-                  <img src={p.image} alt={`${p.name} screenshot`} loading="lazy" className="mt-8 w-full rounded-2xl border border-white/10" />
-                )}
-              </div>
-            </article>
-          ))}
+        <section id="projects" className="relative mt-10 md:mt-12 scroll-mt-36">
+          <h2 className="sr-only">Projects</h2>
+          <div className="grid md:grid-cols-2 gap-5 md:gap-6">
+            {built.map((p) => <ProjectCard key={p.slug} p={p} />)}
+          </div>
         </section>
 
-        <WritingList id="articles" accent="var(--color-accent2)" items={articles} title={<>Things I&apos;ve <span className="text-[var(--color-accent2)]">written</span></>} />
-        <WritingList id="research" accent="var(--color-accent4)" items={research} title={<>Things I&apos;ve <span className="text-[var(--color-accent4)]">researched</span></>} />
+        <section id="achievements" className="mt-20 md:mt-24 scroll-mt-36">
+          <h2 className="text-2xl md:text-4xl font-bold tracking-tight">
+            Things I&apos;ve <span className="text-[var(--color-accent3)]">earned</span>
+          </h2>
+          <ul className="mt-6 border-t border-foreground/10">
+            {achievements.map((c) => {
+              const [name, honour] = c.name.split(" — ");
+              return (
+                <li key={c.name} className="grid md:grid-cols-[1fr_auto] items-baseline gap-x-10 gap-y-1 py-5 border-b border-foreground/10">
+                  <p className="flex flex-wrap items-baseline gap-x-3 text-base md:text-lg font-semibold leading-snug">
+                    <c.icon aria-hidden className="self-center w-5 h-5 shrink-0" style={{ color: c.color }} />
+                    {name}
+                    {honour && <span className="text-sm font-bold" style={{ color: c.color }}>{honour}</span>}
+                  </p>
+                  <p className="text-sm text-foreground/60">
+                    {c.issuer}
+                    {c.credentialUrl && (
+                      <>
+                        {" · "}
+                        <a href={c.credentialUrl} target="_blank" rel="noopener noreferrer" className={`py-2 font-semibold text-foreground/85 hover:text-foreground ${LINK}`}>View credential</a>
+                      </>
+                    )}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
 
-        <footer className="mt-20 md:mt-28 pt-10 border-t border-foreground/10 flex flex-wrap items-center justify-between gap-6">
-          <p className="text-2xl md:text-3xl font-bold tracking-tight text-balance max-w-[20ch]">Want the long version of one of these?</p>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <Link href="/home#contact" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#f0f0f0] text-[#0e0e0e] text-sm font-bold transition-[transform,background-color] duration-150 ease-out hover:bg-white active:scale-[0.97]">
-              Ask me about it
-            </Link>
-            <Link href="/home" className={`py-3 text-sm font-semibold text-foreground/85 hover:text-foreground ${LINK}`}>
-              Back to the site
-            </Link>
-          </div>
-        </footer>
+        <WritingList id="research" accent="var(--color-accent4)" items={research} title={<>Things I&apos;ve <span className="text-[var(--color-accent4)]">researched</span></>} />
+        <WritingList id="articles" accent="var(--color-accent2)" items={articles} title={<>Things I&apos;ve <span className="text-[var(--color-accent2)]">written</span></>} />
+
       </main>
     </div>
   );

@@ -3,11 +3,10 @@
 // One black folder holds the highlighted projects as small files. As soon as the "Case files" heading
 // is readable, the files come up out of the folder and fan out above it; scrolling past slides them back
 // in (it's tied to scroll position, so it reverses when scrolling up too). Galaxy dots and the odd
-// shooting star drift behind. Everything else is listed by name below.
+// shooting star drift behind. The heading's sentence links to /work, where every project is in full.
 import { useLayoutEffect, useRef, useState } from "react";
 import { motion, useScroll, useSpring, useTransform, type MotionValue } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { useReducedMotion } from "@/components/useReducedMotionSafe";
 import { projects, type Project } from "@/data/projects";
 import PartHeading from "@/components/career/PartHeading";
@@ -122,7 +121,6 @@ function CaseFile({ p, index, count, layout, timing, progress, still }: {
 export default function ProjectCases() {
   const reduce = useReducedMotion();
   const featured = FEATURED_ORDER.map((slug) => projects.find((p) => p.slug === slug)).filter((p): p is Project => !!p);
-  const rest = projects.filter((p) => !p.summary); // named in the gallery, no write-up yet
 
   const blockRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
@@ -158,7 +156,13 @@ export default function ProjectCases() {
           <PartHeading
             size="sm"
             title={<>Case <span style={{ color: "var(--color-accent)" }}>files</span></>}
-            description="The details behind the spinning gallery: what each build does and her part in it."
+            description={<>
+              The details behind the spinning gallery:{" "}
+              <Link href="/work" className="font-medium text-foreground/90 underline underline-offset-4 decoration-1 decoration-[var(--color-accent)] hover:decoration-2 hover:text-foreground transition-colors">
+                what each build does and her part in it
+              </Link>
+              .
+            </>}
           />
         </div>
 
@@ -202,35 +206,6 @@ export default function ProjectCases() {
 
       </div>
 
-      {/* The files above are teasers; /work has every one in full. This sits outside the scroll-timed
-          block so its height doesn't shift the folder animation. */}
-      <div className="relative w-full max-w-6xl mx-auto px-6">
-        <Link
-          href="/work"
-          className="group mt-10 inline-flex items-center gap-2 py-2 text-base font-semibold underline underline-offset-4 decoration-1 decoration-[var(--color-accent)] hover:decoration-2"
-        >
-          Open every case file
-          <ArrowRight size={17} aria-hidden className="transition-transform duration-200 ease-out group-hover:translate-x-1" />
-        </Link>
-        {rest.length > 0 && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, amount: 0.6 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-3 text-sm text-foreground/65"
-          >
-            Also in the gallery:{" "}
-            {rest.map((p, i) => (
-              <span key={p.slug}>
-                <span className="font-semibold text-foreground/85">{p.name}</span>
-                {i < rest.length - 1 ? " · " : ""}
-              </span>
-            ))}
-            .
-          </motion.p>
-        )}
-      </div>
     </div>
   );
 }

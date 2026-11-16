@@ -26,6 +26,7 @@ export type Project = {
 export const projects: Project[] = [
   {
     slug: "psometric",
+    image: "/services/uiux-psometric.webp",
     name: "PsoMetric: Image Recognition for Psoriasis Severity",
     color: ACCENT4,
     featured: true,
@@ -37,6 +38,7 @@ export const projects: Project[] = [
   },
   {
     slug: "metacampus",
+    image: "/services/mobile-metacampus.webp",
     name: "MetaCampus: AR for Interactive Student Events",
     color: ACCENT2,
     featured: true,
@@ -48,6 +50,7 @@ export const projects: Project[] = [
   },
   {
     slug: "oneindang",
+    logo: "/logo/1.png",
     name: "One Indang: Digital Governance App",
     color: ACCENT,
     featured: true,
@@ -57,6 +60,7 @@ export const projects: Project[] = [
   },
   {
     slug: "tbltbu",
+    logo: "/logo/4.png",
     name: "The Blind Leading the Blown Up",
     color: ACCENT3,
     featured: true,
@@ -84,6 +88,7 @@ export const projects: Project[] = [
   },
   {
     slug: "dashcar",
+    image: "/services/uiux-dash-car-rentals.webp",
     name: "Dash Car Rentals",
     color: ACCENT,
     summary: "A responsive car rental platform prototype in Figma with intuitive booking flows and real-time availability checking.",
@@ -92,6 +97,7 @@ export const projects: Project[] = [
   },
   {
     slug: "earthquake-detector",
+    image: "/services/iot-earthquake-detector.webp",
     name: "IoT Earthquake Detector",
     color: ACCENT,
     summary: "Seismic detection on ESP controllers with automated alerts and remote monitoring through the cloud.",
@@ -100,6 +106,7 @@ export const projects: Project[] = [
   },
   {
     slug: "misting-sanitation",
+    image: "/services/iot-misting-sanitation.webp",
     name: "Misting Sanitation System",
     color: ACCENT2,
     summary: "Arduino-powered misting pipes with sensor-triggered activation and QR-based attendance tracking.",
