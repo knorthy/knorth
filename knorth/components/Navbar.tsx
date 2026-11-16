@@ -145,7 +145,7 @@ export default function Navbar() {
       {/* Links and Resume: their own fixed layer, so sliding them away moves neither the logo nor the dock */}
       <div
         data-hidden={hidden}
-        className="nav-bar fixed top-4 md:top-6 left-0 right-0 z-50 flex items-center justify-end px-4 md:px-6 pointer-events-none [&>*]:pointer-events-auto"
+        className="nav-bar fixed top-4 md:top-6 left-0 right-0 z-[52] flex items-center justify-end px-4 md:px-6 pointer-events-none [&>*]:pointer-events-auto"
         onPointerEnter={() => hold(true)}
         onPointerLeave={() => hold(false)}
         onFocus={() => hold(true)}

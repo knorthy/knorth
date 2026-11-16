@@ -214,11 +214,11 @@ function FacePlane({ isHovered, grabPhase, deformUniforms }: FacePlaneProps) {
 
   // Load all textures including grabbed expression
   const [faceTexture, bleftTexture, brightTexture, ohhTexture, ughhTexture] = useTexture([
-    '/hero/face.png',
-    '/hero/bleft.png',
-    '/hero/bright.png',
-    '/hero/ohh.png',
-    '/hero/ughh.png',
+    '/hero/face.webp',
+    '/hero/bleft.webp',
+    '/hero/bright.webp',
+    '/hero/ohh.webp',
+    '/hero/ughh.webp',
   ]);
 
   // Set texture properties
@@ -638,7 +638,7 @@ function Scene({ onHoverChange, onGrabSettle }: { onHoverChange?: (hovered: bool
 
 
 // Doodle frames cycle: 1 → 2 → 3 → 2 → repeat (hand-drawn wiggle effect)
-const DOODLE_FRAMES = ['/hero/1.png', '/hero/2.png', '/hero/3.png', '/hero/2.png'];
+const DOODLE_FRAMES = ['/hero/1.webp', '/hero/2.webp', '/hero/3.webp', '/hero/2.webp'];
 const DOODLE_FPS = 500; // ms per frame
 
 function DoodleText() {
@@ -662,7 +662,7 @@ function DoodleText() {
 }
 
 // Interaction hint frames: int1 → int2 → repeat
-const INT_FRAMES = ['/hero/int1.png', '/hero/int2.png'];
+const INT_FRAMES = ['/hero/int1.webp', '/hero/int2.webp'];
 const INT_FPS = 500; // ms per frame
 
 function DoodleInteract() {
@@ -929,7 +929,7 @@ export default function HeroFace() {
       {!isLoaded && (
         <div className="absolute inset-0 flex items-center justify-center">
           <img
-            src="/hero/face.png"
+            src="/hero/face.webp"
             alt="Illustrated portrait of Tiffany"
             className="w-[min(400px,80vw)] h-[min(400px,80vw)] object-contain"
           />

@@ -1,7 +1,7 @@
 "use client";
 // Drifting galaxy dots with the odd shooting star, drawn on a canvas that fills its parent (give the
-// parent position: relative). Dots ease away from the pointer and spring back. Used behind the contact
-// section and the case files.
+// parent position: relative). Dots ease away from the pointer and spring back. Used behind the hero, the
+// case files and the contact section; it only animates while on screen.
 import { useEffect, useRef } from "react";
 
 const ACCENT = "#f72585";
@@ -21,7 +21,11 @@ interface GDot {
   opacity: number;
 }
 
-export default function GalaxyDots() {
+export default function GalaxyDots({ count = 45, topBias = false }: {
+  count?: number;
+  /** half the dots gather in the top third */
+  topBias?: boolean;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouse = useRef({ x: -9999, y: -9999 });
 
@@ -51,15 +55,14 @@ export default function GalaxyDots() {
     canvas.parentElement?.addEventListener("mouseleave", onMouseLeave);
 
     // ── Dots ──────────────────────────────────────────────────────────────
-    const COUNT = 45;
     const REPEL_RADIUS = 80;
     const REPEL_STRENGTH = 0.5;
     const RETURN_SPRING = 0.04;
     const DAMPING = 0.80;
 
-    const dots: GDot[] = Array.from({ length: COUNT }, () => {
+    const dots: GDot[] = Array.from({ length: count }, (_, i) => {
       const ox = Math.random() * canvas.width;
-      const oy = Math.random() * canvas.height;
+      const oy = Math.random() * canvas.height * (topBias && i < count / 2 ? 0.35 : 1);
       const angle = Math.random() * Math.PI * 2;
       const orbitR = Math.random() * 18 + 4;
       const orbitSpeed = (Math.random() * 0.004 + 0.001) * (Math.random() < 0.5 ? 1 : -1);
@@ -197,6 +200,12 @@ export default function GalaxyDots() {
       raf = requestAnimationFrame(tick);
     };
 
+    // Only animate while on screen: three of these live on the page
+    const io = new IntersectionObserver(([entry]) => {
+      cancelAnimationFrame(raf);
+      if (entry.isIntersecting) raf = requestAnimationFrame(tick);
+    });
+
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       // Still sky: one frame of dots, no drift and no shooting stars
       for (const d of dots) {
@@ -210,16 +219,17 @@ export default function GalaxyDots() {
       raf = 0;
     } else {
       spawnStar(); // kick off with one immediately
-      raf = requestAnimationFrame(tick);
+      io.observe(canvas);
     }
 
     return () => {
       cancelAnimationFrame(raf);
+      io.disconnect();
       ro.disconnect();
       canvas.parentElement?.removeEventListener("mousemove", onMouseMove);
       canvas.parentElement?.removeEventListener("mouseleave", onMouseLeave);
     };
-  }, []);
+  }, [count, topBias]);
 
   return (
     <canvas

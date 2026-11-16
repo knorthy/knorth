@@ -1,5 +1,6 @@
 "use client";
 
+import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "next-themes";
 import { PageTransitionProvider } from "@/components/PageTransition";
 
@@ -11,9 +12,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       storageKey="theme"
     >
-      <PageTransitionProvider>
-        {children}
-      </PageTransitionProvider>
+      <MotionConfig reducedMotion="user">
+        <PageTransitionProvider>
+          {children}
+        </PageTransitionProvider>
+      </MotionConfig>
     </ThemeProvider>
   );
 }

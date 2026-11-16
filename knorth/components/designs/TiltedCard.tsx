@@ -1,13 +1,13 @@
 "use client";
 
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import React from 'react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
 
 const springValues = {
-  damping: 30,
-  stiffness: 100,
-  mass: 2
+  damping: 22,
+  stiffness: 170,
+  mass: 1
 };
 
 export default function TiltedCard({
@@ -52,7 +52,7 @@ export default function TiltedCard({
     mass: 1
   });
 
-  const [lastY, setLastY] = useState(0);
+  const lastY = useRef(0); // a ref, so moving the pointer doesn't re-render the card
 
   function handleMouse(e: React.MouseEvent) {
     if (!ref.current) return;
@@ -70,9 +70,9 @@ export default function TiltedCard({
     x.set(e.clientX - rect.left);
     y.set(e.clientY - rect.top);
 
-    const velocityY = offsetY - lastY;
+    const velocityY = offsetY - lastY.current;
     rotateFigcaption.set(-velocityY * 0.6);
-    setLastY(offsetY);
+    lastY.current = offsetY;
   }
 
   function handleMouseEnter() {
@@ -119,6 +119,7 @@ export default function TiltedCard({
         <motion.img
           src={imageSrc}
           alt={altText}
+          loading="lazy"
           className="absolute top-0 left-0 object-cover rounded-[20px] shadow-2xl will-change-transform [transform:translateZ(0)]"
           style={{
             width: imageWidth,
@@ -126,10 +127,9 @@ export default function TiltedCard({
           }}
         />
 
-        {/* This is the section that was likely causing the error */}
         {displayOverlayContent && overlayContent && (
           <motion.div 
-            className="absolute inset-0 z-[2] flex items-center justify-center will-change-transform [transform:translateZ(40px)] pointer-events-none"
+            className="absolute inset-0 z-[2] flex items-end justify-start p-4 will-change-transform [transform:translateZ(40px)] pointer-events-none"
           >
             {overlayContent}
           </motion.div>

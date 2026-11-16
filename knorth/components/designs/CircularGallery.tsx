@@ -521,6 +521,12 @@ class App {
     this.raf = window.requestAnimationFrame(this.update.bind(this));
   }
 
+  /** Stop rendering while the gallery is off screen */
+  setRunning(on: boolean) {
+    window.cancelAnimationFrame(this.raf);
+    if (on) this.update();
+  }
+
   addEventListeners() {
     this.boundOnResize = this.onResize.bind(this);
     this.boundOnWheel = this.onWheel.bind(this);
@@ -587,14 +593,22 @@ export default function CircularGallery({
     if (!containerRef.current) return;
     let app: App | undefined;
     let isMounted = true;
+    let visible = true;
+    const io = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      app?.setRunning(visible);
+    });
+    io.observe(containerRef.current);
 
     resolveFont(font, fontUrl).then(resolvedFont => {
       if (!isMounted || !containerRef.current) return;
       app = new App(containerRef.current, { items, bend, textColor, borderRadius, font: resolvedFont, scrollSpeed, scrollEase });
+      app.setRunning(visible);
     });
 
     return () => {
       isMounted = false;
+      io.disconnect();
       if (app) app.destroy();
     };
   }, [items, bend, textColor, borderRadius, font, fontUrl, scrollSpeed, scrollEase]);
